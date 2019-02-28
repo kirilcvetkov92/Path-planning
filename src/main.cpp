@@ -110,7 +110,7 @@ int main() {
             double min_speed1 = 999;
             double min_pos1 = 999;
             double min_speed2 = 999;
-            double min_pos2 = 9;
+            double min_pos2 = 999;
             if(prev_size>0)
             {
                 car_s = end_path_s;
@@ -159,7 +159,7 @@ int main() {
 
                     if((future_car_s>car_s) && ((future_car_s-car_s)<30))
                     {
-                        if(future_car_s-car_s<min_pos)
+                        if(future_car_s-car_s<min_pos1)
                         {
                             min_pos1 = future_car_s-car_s;
                             min_speed1 = speed;
@@ -182,7 +182,7 @@ int main() {
                     
                     if((future_car_s>car_s) && ((future_car_s-car_s)<30))
                     {
-                        if(future_car_s-car_s<min_pos)
+                        if(future_car_s-car_s<min_pos2)
                         {
                             min_pos2 = future_car_s-car_s;
                             min_speed2 = speed;
@@ -192,22 +192,28 @@ int main() {
                 }
             }
             
-            cout<<too_close<<" "<<too_close1<<" "<<too_close2<<endl;
+            cout<<round(car_d)<<"D"<<endl;
             if(lane==0 and too_close and !too_close1)
             {
-                lane = 1;
+                if(round(car_d)==2)
+                    lane = 1;
             }
             else if (lane==1 and too_close1 and !too_close)
             {
-                lane = 0;
+                 if(round(car_d)==6)
+                     lane = 0;
             }
             else if(lane==1 and too_close1 and !too_close2)
             {
-                lane = 2;
+                if(round(car_d)==6)
+                {
+                    lane = 2;
+                }
             }
             else if (lane==2 and too_close2 and !too_close1)
             {
-                lane=1;
+                if(round(car_d)==10)
+                    lane=1;
             }
             else if ((too_close1 and lane==1) | (too_close2 and lane==2) | (too_close and lane==0))
             {
@@ -218,9 +224,12 @@ int main() {
                 {
                     speed_ = min_speed2;
                 }
-                else
+                else if (too_close and lane==0)
+                {
                 speed_ = min_speed;
-                ref_vel =max(speed_*2.24, ref_vel-0.224);
+                }
+                ref_vel =min(49.5, max(speed_*2.24+0.001, ref_vel-0.224));
+                cout<<ref_vel<<"Lane="<<lane<<" D="<<round(car_d)<<" speed_:"<<speed_<<endl;
             }
             else
             if(ref_vel<49.5)
