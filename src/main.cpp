@@ -102,6 +102,9 @@ int main() {
 
 
             bool too_close = false;
+            bool too_close1 = false;
+            bool too_close2 = false;
+
             if(prev_size>0)
             {
                 car_s = end_path_s;
@@ -112,7 +115,7 @@ int main() {
                 // get car lane
                 float d = sensor_fusion[i][6];
 
-                if(d>lane*4 && d<4*(lane+1))
+                if(d>0*4 && d<4*(0+1))
                 {
                     double vx = sensor_fusion[i][3];
                     double vy = sensor_fusion[i][4];
@@ -126,18 +129,65 @@ int main() {
                         too_close = true;
                     }
                 }
+                
+                else if(d>(1)*4 && d<4*(1+1))
+                {
+                    double vx = sensor_fusion[i][3];
+                    double vy = sensor_fusion[i][4];
+                    double speed = sqrt(vx*vx + vy*vy);
+                    double s = sensor_fusion[i][5];
+                    double future_car_s = s + (prev_size*0.02)*speed;
+                    
+                    if((future_car_s>car_s) && ((future_car_s-car_s)<30))
+                    {
+                        
+                        too_close1 = true;
+                    }
+                }
+                else if(d>(2)*4 && d<4*(2+1))
+                {
+                    double vx = sensor_fusion[i][3];
+                    double vy = sensor_fusion[i][4];
+                    double speed = sqrt(vx*vx + vy*vy);
+                    double s = sensor_fusion[i][5];
+                    double future_car_s = s + (prev_size*0.02)*speed;
+                    
+                    if((future_car_s>car_s) && ((future_car_s-car_s)<30))
+                    {
+                        
+                        too_close2 = true;
+                    }
+                }
             }
             
-            
-            if(too_close)
+            if(lane==0 and too_close and !too_close1)
             {
-                ref_vel -=0.224;
+                lane = 1;
             }
-         
-            else if (ref_vel<49.5)
+            else if (lane==1 and too_close1 and !too_close)
+            {
+                lane = 0;
+            }
+            else if(lane==1 and too_close1 and !too_close2)
+            {
+                lane = 2;
+            }
+            else if (lane==2 and too_close2 and !too_close1)
+            {
+                lane=1;
+            }
+            else if ((too_close1 and lane==1) | (too_close2 and lane==2) | (too_close and lane==0))
+            {
+           
+        
+                ref_vel -=0.224/3;
+            }
+            else
+            if(ref_vel<49.5)
             {
                 ref_vel+=0.224;
             }
+       
             
             vector<double> ptsX;
             vector<double> ptsY;
@@ -147,7 +197,7 @@ int main() {
             double ref_yaw = deg2rad(car_yaw);
             
             
-            // for initial stability 
+            // for initial stability
             if (prev_size<2)
             {
                 double prev_car_x = car_x - 1*cos(car_yaw);
