@@ -104,7 +104,13 @@ int main() {
             bool too_close = false;
             bool too_close1 = false;
             bool too_close2 = false;
-
+            
+            double min_speed = 999;
+            double min_pos = 999;
+            double min_speed1 = 999;
+            double min_pos1 = 999;
+            double min_speed2 = 999;
+            double min_pos2 = 9;
             if(prev_size>0)
             {
                 car_s = end_path_s;
@@ -121,11 +127,20 @@ int main() {
                     double vy = sensor_fusion[i][4];
                     double speed = sqrt(vx*vx + vy*vy);
                     double s = sensor_fusion[i][5];
-                    double future_car_s = s + (prev_size*0.02)*speed;
+                    
+                    double r = lane==0?0:10;
+
+                    
+                    double future_car_s = s + (prev_size*0.02)*speed+r;
+                    
                     
                     if((future_car_s>car_s) && ((future_car_s-car_s)<30))
                     {
-    
+                        if(future_car_s-car_s<min_pos)
+                        {
+                            min_pos = future_car_s-car_s;
+                            min_speed = speed;
+                        }
                         too_close = true;
                     }
                 }
@@ -136,11 +151,19 @@ int main() {
                     double vy = sensor_fusion[i][4];
                     double speed = sqrt(vx*vx + vy*vy);
                     double s = sensor_fusion[i][5];
-                    double future_car_s = s + (prev_size*0.02)*speed;
                     
+                    double r = lane==1?0:10;
+
+                    double future_car_s = s + (prev_size*0.02)*speed+r;
+                    
+
                     if((future_car_s>car_s) && ((future_car_s-car_s)<30))
                     {
-                        
+                        if(future_car_s-car_s<min_pos)
+                        {
+                            min_pos1 = future_car_s-car_s;
+                            min_speed1 = speed;
+                        }
                         too_close1 = true;
                     }
                 }
@@ -150,16 +173,26 @@ int main() {
                     double vy = sensor_fusion[i][4];
                     double speed = sqrt(vx*vx + vy*vy);
                     double s = sensor_fusion[i][5];
-                    double future_car_s = s + (prev_size*0.02)*speed;
+                    
+                    double r = lane==2?0:10;
+
+                    double future_car_s = s + (prev_size*0.02)*speed+r;
+                    
+
                     
                     if((future_car_s>car_s) && ((future_car_s-car_s)<30))
                     {
-                        
+                        if(future_car_s-car_s<min_pos)
+                        {
+                            min_pos2 = future_car_s-car_s;
+                            min_speed2 = speed;
+                        }
                         too_close2 = true;
                     }
                 }
             }
             
+            cout<<too_close<<" "<<too_close1<<" "<<too_close2<<endl;
             if(lane==0 and too_close and !too_close1)
             {
                 lane = 1;
@@ -178,9 +211,16 @@ int main() {
             }
             else if ((too_close1 and lane==1) | (too_close2 and lane==2) | (too_close and lane==0))
             {
-           
-        
-                ref_vel -=0.224/3;
+                double speed_ = 0;
+                if(too_close1 and lane==1)
+                    speed_ = min_speed1;
+                else if (too_close2 and lane==2)
+                {
+                    speed_ = min_speed2;
+                }
+                else
+                speed_ = min_speed;
+                ref_vel =max(speed_*2.24, ref_vel-0.224);
             }
             else
             if(ref_vel<49.5)
