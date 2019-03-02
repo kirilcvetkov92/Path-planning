@@ -415,10 +415,15 @@ public:
                 double speed = sqrt(vx*vx + vy*vy);
                 double s = sensor_fusion[i][5];
                 
-                double r = 5;
+                double r = 10;
                 double future_car_s = s + (previos_size*0.02)*speed+r;
                 
-                if(future_car_s>car_s && future_car_s-car_s<30)
+                if(car_s>s and future_car_s>car_s && future_car_s-car_s<30)
+                {
+                    return false;
+                }
+                future_car_s-=10;
+                if(car_s<s and future_car_s>car_s && future_car_s-car_s<30)
                 {
                     return false;
                 }
@@ -567,16 +572,17 @@ public:
             double s = sensor_fusion[i][5];
             
             double future_car_s = s + (previos_size*0.02)*speed;
-            double future_car_d = d + (4*0.02)*speed;
+            double future_car_d = d + (4*0.02)*vy;
             
-            if(future_car_s>car_s && future_car_s-car_s<8)
+            if(abs((int)car_d/4 - (int)d/4)==0 && future_car_s>car_s && future_car_s-car_s<5)
             {
-                
+                cout<<"COLISION S"<<endl;
                 colision = true;
             }
             
-            if(abs(car_s - s)<5 and abs(future_car_d-car_d)<1)
+            if(abs(car_d - d)<4 and abs(car_s - s)<6 and abs(future_car_d-car_d)<1.5)
             {
+                cout<<"COLISION D"<<endl;
                 colision = true;
             }
         }

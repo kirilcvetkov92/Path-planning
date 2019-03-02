@@ -73,10 +73,10 @@ int main() {
     ChangeSpeed *changeSpeedBeforeColision = new ChangeSpeed(15);
     
     
-//    root->addChild(avoidColisionDrive);
-//    avoidColisionDrive->addChild(colisionDetection);
-//    avoidColisionDrive->addChild(changeSpeedBeforeColision);
-//    avoidColisionDrive->addChild(driveToEscapeColision);
+    root->addChild(avoidColisionDrive);
+    avoidColisionDrive->addChild(colisionDetection);
+    avoidColisionDrive->addChild(changeSpeedBeforeColision);
+    avoidColisionDrive->addChild(driveToEscapeColision);
 
     Sequence * laneSwitch0 = new Sequence;  // In general there will be several nodes that are Sequence or Selector, so they should be suffixed by an integer to distinguish between them.
     IsLaneNumberTask * isLane0Task  = new IsLaneNumberTask(1);  // The door is initially closed and 5 meters away.
