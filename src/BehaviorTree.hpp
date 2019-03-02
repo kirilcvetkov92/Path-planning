@@ -16,39 +16,45 @@
 #include "helpers.h"
 #include "spline.h"
 #include "json.hpp"
+#include "math.h"
 
 using namespace std;
 
 struct Map{
-    vector<double> &waypoints_x;
-    vector<double> &waypoints_y;
-    vector<double> &waypoints_s;
-    vector<double> &waypoints_dx;
-    vector<double> &waypoints_dy;
+    vector<double> waypoints_x;
+    vector<double> waypoints_y;
+    vector<double> waypoints_s;
+    vector<double> waypoints_dx;
+    vector<double> waypoints_dy;
 };
-
 struct CarStatus {
-    int lane;
 
-    double car_x;;
+    double car_x;
     double car_y;
     double car_s;
     double car_d;
     double car_yaw;
-    double car_speed;
+    static double car_speed;
+    static double lane;
 
-    vector<double> previous_path_x;
-    vector<double> previous_path_y;
+    nlohmann::json previous_path_x;
+    nlohmann::json previous_path_y;
 
     double end_path_s;
     double end_path_d;
 
-    vector<vector<float>> sensor_fusion;
+    nlohmann::json sensor_fusion;
+    int getLane()
+    {
+        return car_d/4;
+    }
 };
+double CarStatus::car_speed = 0;
+double CarStatus::lane = 1;
 
 class Node {  // This class represents each node in the behaviour tree.
 public:
-    virtual bool run() = 0;
+    virtual bool run(Map &map, CarStatus &carStatus, uWS::WebSocket<uWS::SERVER> &ws) = 0;
 };
 
 class CompositeNode : public Node {  //  This type of Node follows the Composite Pattern, containing a list of other Nodes.
@@ -61,9 +67,9 @@ public:
 
 class Selector : public CompositeNode {
 public:
-    virtual bool run() override {
+    virtual bool run(Map &map, CarStatus &carStatus, uWS::WebSocket<uWS::SERVER> &ws) override {
         for (Node* child : getChildren()) {  // The generic Selector implementation
-            if (child->run())  // If one child succeeds, the entire operation run() succeeds.  Failure only results if all children fail.
+            if (child->run(map, carStatus, ws))  // If one child succeeds, the entire operation run() succeeds.  Failure only results if all children fail.
                 return true;
         }
         return false;  // All children failed so the entire run() operation fails.
@@ -72,9 +78,9 @@ public:
 
 class Sequence : public CompositeNode {
 public:
-    virtual bool run() override {
+    virtual bool run(Map &map, CarStatus &carStatus, uWS::WebSocket<uWS::SERVER> &ws) override {
         for (Node* child : getChildren()) {  // The generic Sequence implementation.
-            if (!child->run())  // If one child fails, then enter operation run() fails.  Success only results if all children succeed.
+            if (!child->run(map, carStatus, ws))  // If one child fails, then enter operation run() fails.  Success only results if all children succeed.
                 return false;
         }
         return true;  // All children suceeded, so the entire run() operation succeeds.
@@ -85,14 +91,18 @@ class IsLaneNumberTask : public Node {
     /*Check we are in the middle of the lane*/
 
 private:
-    CarStatus* status;
     int laneNumber;
 public:
-    IsLaneNumberTask (CarStatus* status, int laneNumber) : laneNumber(laneNumber) {
+    IsLaneNumberTask (int laneNumber) : laneNumber(laneNumber) {
         this->laneNumber = laneNumber;
     }
-    virtual bool run() override {
-        return laneNumber== laneNumber*4+2;
+    virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
+        bool res = round(status.car_d) == laneNumber*4+2 and laneNumber==CarStatus::lane;
+        if (res)
+        {
+            cout<<"Pomina proverkata za lenta => tocno sme na "<<laneNumber<<endl;
+        }
+        return res;
     }
 };
 
@@ -101,18 +111,30 @@ class IsSomeoneCloseBeforeYouTask : public Node {
     /*Check if someone is close to you in your track*/
 
 private:
-    CarStatus* status;
     int laneNumber;
 
 public:
-    IsSomeoneCloseBeforeYouTask (CarStatus* status, int laneNumber) : status(status), laneNumber(laneNumber) {
+    IsSomeoneCloseBeforeYouTask (int laneNumber): laneNumber(laneNumber){
     }
-    virtual bool run() override {
-        auto &sensor_fusion = status->sensor_fusion;
+    virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
+        auto &sensor_fusion = status.sensor_fusion;
+        bool found = false;
+
+        double minDistance=9999;
+        double minSpeed=99999;
+        int previos_size = status.previous_path_x.size();
+
+        double car_s = status.car_s;
+        if(previos_size>0)
+        {
+            car_s = status.end_path_s;
+        }
+        
         for(int i=0; i<sensor_fusion.size(); i++)
         {
             // get car lane
             float d = sensor_fusion[i][6];
+            
 
             if(d>laneNumber*4 && d<4*(laneNumber+1))
             {
@@ -121,57 +143,150 @@ public:
                 double speed = sqrt(vx*vx + vy*vy);
                 double s = sensor_fusion[i][5];
 
-                double &car_s = status->car_s;
+    
+                
 
-                int previos_size = status->previous_path_x.size();
                 double future_car_s = s + (previos_size*0.02)*speed;
-
 
                 if(future_car_s>car_s && future_car_s-car_s<30)
                 {
-                    return true;
+                    double d = future_car_s-car_s;
+                    if(minDistance>d)
+                    {
+                        minDistance=d;
+                        minSpeed = speed*2.24;
+                    }
+                    
+                    //cout<<"true"<<"IsSomeoneCloseBeforeYouTask"<<endl;
+                    found = true;
                 }
             }
+            
+  
         }
-        return false;
-    }
+        //CarStatus::car_speed = 49.5
+        if(found)
+            CarStatus::car_speed = max(CarStatus::car_speed-0.224, minSpeed);
+
+        else
+            CarStatus::car_speed = min(CarStatus::car_speed+0.224, 49.5);
+        
+        cout<<"IsSomeoneCloseBeforeYouTask : Lane : "<<laneNumber<<" found:"<<found<<endl;
+        return found;
+            }
 };
+
+
+//
+//class ChangeVelocityToTheClosestInLane : public Node {
+//    /*Check if someone is close to you in your track*/
+//
+//private:
+//    int laneNumber;
+//
+//public:
+//    ChangeVelocityToTheClosestInLane (int laneNumber=-1){
+//
+//    }
+//    virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
+//        auto &sensor_fusion = status.sensor_fusion;
+//
+//
+//        for(int i=0; i<sensor_fusion.size(); i++)
+//        {
+//            // get car lane
+//            float d = sensor_fusion[i][6];
+//
+//            if(d>laneNumber*4 && d<4*(laneNumber+1))
+//            {
+//                double vx = sensor_fusion[i][3];
+//                double vy = sensor_fusion[i][4];
+//                double speed = sqrt(vx*vx + vy*vy);
+//                double s = sensor_fusion[i][5];
+//
+//                double car_s = status.car_s;
+//
+//                int previos_size = status.previous_path_x.size();
+//
+//
+//                if(previos_size>0)
+//                {
+//                    car_s = status.end_path_s;
+//                }
+//
+//
+//                double future_car_s = s + (previos_size*0.02)*speed;
+//
+//
+//                if(future_car_s>car_s && future_car_s-car_s<30)
+//                {
+//                    double d = future_car_s-car_s;
+//                    if(minDistance>d)
+//                    {
+//                        minDistance=d;
+//                        minSpeed = speed*2.24;
+//                    }
+//
+//                }
+//            }
+//        }
+//        CarStatus::car_speed = minSpeed;
+//        cout<<"ChangeVelocityToTheClosestInLane"<<minSpeed<<endl;
+//        return true;
+//    }
+//
+//
+//};
 
 
 class DriveTask : public Node {
     /*Check we are in the middle of the lane*/
 
 private:
-    CarStatus* status;
-    Map *map;
-    uWS::WebSocket<uWS::SERVER> &ws;
+    int switchLane=-1;
 public:
-    DriveTask (CarStatus* status, Map *map, uWS::WebSocket<uWS::SERVER> &ws) : status(status), map(map), ws(ws){
-
+    DriveTask (int switchLane=-1): switchLane(switchLane){
     }
-    virtual bool run() override {
+ 
+    virtual bool run(Map &map, CarStatus &status,  uWS::WebSocket<uWS::SERVER> &ws) override {
         vector<double> ptsX;
         vector<double> ptsY;
 
-        auto &car_x = status->car_x;
-        auto &car_y = status->car_y;
-        auto &car_yaw = status->car_yaw;
+        auto car_x = status.car_x;
+        auto car_y = status.car_y;
+        auto car_yaw = status.car_yaw;
 
-        double &ref_x = status->car_x;
-        double &ref_y = status->car_y;
+        double ref_x = status.car_x;
+        double ref_y = status.car_y;
         double ref_yaw = 0;//helpers::deg2rad(status->car_yaw);
-
-        auto &car_s = status->car_s;
-
-        auto &previous_path_x = status->previous_path_x;
-        auto &previous_path_y = status->previous_path_y;
-
-        int &lane = status->lane;
-
+        
+        auto previous_path_x = status.previous_path_x;
+        auto previous_path_y = status.previous_path_y;
         int prev_size = previous_path_x.size();
-        // for initial stability
-        double ref_vel = 49.5;
 
+        auto car_s = status.car_s;
+
+        if(prev_size>0)
+        {
+            car_s = status.end_path_s;
+        }
+
+        int lane = CarStatus::lane;
+        if (switchLane!=-1)
+        {
+             CarStatus::lane = lane = switchLane;
+             cout<<"Switching lane to"<<lane<<endl;
+           
+        }
+        else
+        {
+            cout<<"Odime vo ista nasoka"<<endl;
+        }
+
+        // for initial stability
+       
+   
+        
         if (prev_size<2)
         {
             double prev_car_x = car_x - 1*cos(car_yaw);
@@ -197,9 +312,9 @@ public:
             ptsY.push_back(ref_y);
         }
 
-        vector<double> next_wp0 = helpers::getXY(car_s+30.0, (4*lane)+2, map->waypoints_s, map->waypoints_x, map->waypoints_y);
-        vector<double> next_wp1 = helpers::getXY(car_s+60.0, (4*lane)+2, map->waypoints_s, map->waypoints_x, map->waypoints_y);
-        vector<double> next_wp2 = helpers::getXY(car_s+90.0, (4*lane)+2, map->waypoints_s, map->waypoints_x, map->waypoints_y);
+        vector<double> next_wp0 = helpers::getXY(car_s+30.0, (4*lane)+2, map.waypoints_s, map.waypoints_x, map.waypoints_y);
+        vector<double> next_wp1 = helpers::getXY(car_s+60.0, (4*lane)+2, map.waypoints_s, map.waypoints_x, map.waypoints_y);
+        vector<double> next_wp2 = helpers::getXY(car_s+90.0, (4*lane)+2, map.waypoints_s, map.waypoints_x, map.waypoints_y);
 
         ptsX.push_back(next_wp0[0]);
         ptsX.push_back(next_wp1[0]);
@@ -235,7 +350,7 @@ public:
         double target_y = s(target_x);
         double target_dist = sqrt((target_x*target_x)+(target_y*target_y));
 
-        double n = target_dist / (0.02f/2.24 * ref_vel);
+        double n = target_dist / (0.02f/2.24 * CarStatus::car_speed);
         double add_x=0;
         for(int i=0; i< 50 - previous_path_x.size(); i++)
         {
@@ -263,27 +378,38 @@ public:
 
         auto msg = "42[\"control\","+ msgJson.dump()+"]";
         ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-
+        
+        return true;
     }
 };
 
 
-class IsSomeoneCloseBelowYouTask : public Node {
+class IsOtherLaneFeasibleTask : public Node {
     /*Check if someone is close to you in your track*/
 
 private:
-    CarStatus* status;
     int laneNumber;
 public:
-    IsSomeoneCloseBelowYouTask (CarStatus* status, int laneNumber) : status(status), laneNumber(laneNumber) {
+    IsOtherLaneFeasibleTask (int laneNumber) :  laneNumber(laneNumber) {
     }
-    virtual bool run() override {
-        auto &sensor_fusion = status->sensor_fusion;
+    virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
+        auto &sensor_fusion = status.sensor_fusion;
         for(int i=0; i<sensor_fusion.size(); i++)
         {
             // get car lane
             float d = sensor_fusion[i][6];
-
+            
+            double car_s = status.car_s;
+            
+            int previos_size = status.previous_path_x.size();
+            
+            
+            if(previos_size>0)
+            {
+                car_s = status.end_path_s;
+            }
+            
+            
             if(d>laneNumber*4 && d<4*(laneNumber+1))
             {
                 double vx = sensor_fusion[i][3];
@@ -291,22 +417,22 @@ public:
                 double speed = sqrt(vx*vx + vy*vy);
                 double s = sensor_fusion[i][5];
 
-                double &car_s = status->car_s;
-
-                int previos_size = status->previous_path_x.size();
-                double future_car_s = s + (previos_size*0.02)*speed;
+                double r = 5;
+                double future_car_s = s + (previos_size*0.02)*speed+r;
                 
-                double r = 10;
-
-                if(future_car_s>car_s && future_car_s-car_s<30+r)
+                if(future_car_s>car_s && future_car_s-car_s<30)
                 {
-                    return true;
+                    return false;
+                    //cout<<"false"<<"IsOtherLaneFeasibleTask"<<endl;
+
                 }
             }
         }
-        return false;
+         //cout<<"true"<<"IsOtherLaneFeasibleTask"<<endl;
+        return true;
     }
 };
+
 
 
 //int main() {

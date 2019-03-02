@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+namespace helpers
+{
 // for convenience
 using std::string;
 using std::vector;
@@ -153,5 +155,6 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s,
 
   return {x,y};
 }
-
+};
 #endif  // HELPERS_H
+

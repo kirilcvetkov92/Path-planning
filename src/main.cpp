@@ -8,362 +8,217 @@
 #include "helpers.h"
 #include "json.hpp"
 #include "spline.h"
-
+#include "BehaviorTree.hpp"
 // for convenience
 using nlohmann::json;
 using std::string;
 using std::vector;
 using namespace std;
+using namespace helpers;
+
 int main() {
-  uWS::Hub h;
-
-  // Load up map values for waypoint's x,y,s and d normalized normal vectors
-  vector<double> map_waypoints_x;
-  vector<double> map_waypoints_y;
-  vector<double> map_waypoints_s;
-  vector<double> map_waypoints_dx;
-  vector<double> map_waypoints_dy;
-
-  // Waypoint map to read from
-  string map_file_ = "../data/highway_map.csv";
-  // The max s value before wrapping around the track back to 0
-  double max_s = 6945.554;
-
-  std::ifstream in_map_(map_file_.c_str(), std::ifstream::in);
-
-  string line;
-  while (getline(in_map_, line)) {
-    std::istringstream iss(line);
-    double x;
-    double y;
-    float s;
-    float d_x;
-    float d_y;
-    iss >> x;
-    iss >> y;
-    iss >> s;
-    iss >> d_x;
-    iss >> d_y;
-    map_waypoints_x.push_back(x);
-    map_waypoints_y.push_back(y);
-    map_waypoints_s.push_back(s);
-    map_waypoints_dx.push_back(d_x);
-    map_waypoints_dy.push_back(d_y);
-  }
+    uWS::Hub h;
+    
+    // Load up map values for waypoint's x,y,s and d normalized normal vectors
+    vector<double> map_waypoints_x;
+    vector<double> map_waypoints_y;
+    vector<double> map_waypoints_s;
+    vector<double> map_waypoints_dx;
+    vector<double> map_waypoints_dy;
+    
+    // Waypoint map to read from
+    string map_file_ = "../data/highway_map.csv";
+    // The max s value before wrapping around the track back to 0
+    double max_s = 6945.554;
+    
+    std::ifstream in_map_(map_file_.c_str(), std::ifstream::in);
+    
+    string line;
+    while (getline(in_map_, line)) {
+        std::istringstream iss(line);
+        double x;
+        double y;
+        float s;
+        float d_x;
+        float d_y;
+        iss >> x;
+        iss >> y;
+        iss >> s;
+        iss >> d_x;
+        iss >> d_y;
+        map_waypoints_x.push_back(x);
+        map_waypoints_y.push_back(y);
+        map_waypoints_s.push_back(s);
+        map_waypoints_dx.push_back(d_x);
+        map_waypoints_dy.push_back(d_y);
+    }
     int lane = 1;
     double ref_vel = 0;
     
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
-               &map_waypoints_dx,&map_waypoints_dy, &lane, &ref_vel]
-              (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
-               uWS::OpCode opCode) {
-    // "42" at the start of the message means there's a websocket message event.
-    // The 4 signifies a websocket message
-    // The 2 signifies a websocket event
-    if (length && length > 2 && data[0] == '4' && data[1] == '2') {
+    
+    
+    Map map;
+    map.waypoints_x = map_waypoints_x;
+    map.waypoints_y = map_waypoints_y;
+    map.waypoints_s = map_waypoints_s;
+    map.waypoints_dx = map_waypoints_dx;
+    map.waypoints_dy = map_waypoints_dy;
+    
+    
+    Selector *root = new Selector;  // Note that root can be either a Sequence or a Selector, since it has only one child.
+    Sequence * laneSwitch0 = new Sequence;  // In general there will be several nodes that are Sequence or Selector, so they should be suffixed by an integer to distinguish between them.
+    IsLaneNumberTask * isLane0Task  = new IsLaneNumberTask(1);  // The door is initially closed and 5 meters away.
+    Sequence *switchConditionsLane1 = new Sequence;  // Note that root can be either a Sequence or a Selector, since it has only one child.
+    IsOtherLaneFeasibleTask *isOtherLaneFeasibleTaskFrom0 = new IsOtherLaneFeasibleTask(0);
+    IsSomeoneCloseBeforeYouTask *isSomeoneCloseBeforeYouTask = new IsSomeoneCloseBeforeYouTask(1);
+    //ChangeVelocityToTheClosestInLane *changeVelocityToTheClosestInLane  = new ChangeVelocityToTheClosestInLane(1);
+    DriveTask *drive1_0 = new DriveTask(0);
 
-      auto s = hasData(data);
+    Sequence * laneSwitch2 = new Sequence;  // In general there will be several nodes that are Sequence or Selector, so they should be suffixed by an integer to distinguish between them.
+    IsLaneNumberTask * isLane2Task  = new IsLaneNumberTask(1);  // The door is initially closed and 5 meters away.
+    Sequence *switchConditionsLane1_2 = new Sequence;  // Note that root can be either a Sequence or a Selector, since it has only one child.
+    IsOtherLaneFeasibleTask *isOtherLaneFeasibleTaskFrom1_2 = new IsOtherLaneFeasibleTask(2);
+    IsSomeoneCloseBeforeYouTask *isSomeoneCloseBeforeYouTask1_2 = new IsSomeoneCloseBeforeYouTask(1);
+    //ChangeVelocityToTheClosestInLane *changeVelocityToTheClosestInLane  = new ChangeVelocityToTheClosestInLane(1);
+    DriveTask *drive1_2 = new DriveTask(2);
+    
+    
+    Selector * laneSwitch1 = new Selector;  // In general there will be several nodes that are Sequence or Selector, so they should be suffixed by an integer to distinguish between them.
+    
+    Sequence * laneSwitch2_1 = new Sequence;
+    IsLaneNumberTask * isLaneTask2_1  = new IsLaneNumberTask(2);  // The door is initially closed and 5 meters away.
+    Sequence *switchConditionsLane2_1 = new Sequence;  // Note that root can be either a Sequence or a Selector, since it has only one child.
+    IsOtherLaneFeasibleTask *isOtherLaneFeasibleTaskFrom2_1 = new IsOtherLaneFeasibleTask(1);
+    IsSomeoneCloseBeforeYouTask *isSomeoneCloseBeforeYouTaskFrom2_1 = new IsSomeoneCloseBeforeYouTask(2);
+    DriveTask *drive2_1 = new DriveTask(1);
+    
+    Sequence * laneSwitch0_1 = new Sequence;
+    IsLaneNumberTask * isLaneTask0_1  = new IsLaneNumberTask(0);  // The door is initially closed and 5 meters away.
+    Sequence *switchConditionsLane0_1 = new Sequence;  // Note that root can be either a Sequence or a Selector, since it has only one child.
+    IsOtherLaneFeasibleTask *isOtherLaneFeasibleTaskFrom0_1 = new IsOtherLaneFeasibleTask(1);
+    IsSomeoneCloseBeforeYouTask *isSomeoneCloseBeforeYouTaskFrom0_1 = new IsSomeoneCloseBeforeYouTask(0);
+    DriveTask *drive0_1 = new DriveTask(1);
+    
+    
+    root->addChild(laneSwitch0);
+    
+    laneSwitch0->addChild (isLane0Task);
+    laneSwitch0->addChild (switchConditionsLane1);
+    laneSwitch0->addChild(drive1_0);
+    switchConditionsLane1->addChild (isSomeoneCloseBeforeYouTask);
+    switchConditionsLane1->addChild (isOtherLaneFeasibleTaskFrom0);
+    
+    root->addChild(laneSwitch2);
+    laneSwitch2->addChild (isLane2Task);
+    laneSwitch2->addChild (switchConditionsLane1_2);
+    laneSwitch2->addChild(drive1_2);
+    switchConditionsLane1_2->addChild (isSomeoneCloseBeforeYouTask1_2);
+    switchConditionsLane1_2->addChild (isOtherLaneFeasibleTaskFrom1_2);
+    
+    root->addChild(laneSwitch1);
+    laneSwitch1->addChild(laneSwitch2_1);
+    laneSwitch1->addChild(laneSwitch0_1);
+//
+    laneSwitch2_1->addChild(isLaneTask2_1);
+    laneSwitch2_1->addChild(switchConditionsLane2_1);
+    laneSwitch2_1->addChild(drive2_1);
+    switchConditionsLane2_1->addChild(isSomeoneCloseBeforeYouTaskFrom2_1);
 
-      if (s != "") {
-        auto j = json::parse(s);
-        
-        string event = j[0].get<string>();
-        
-        if (event == "telemetry") {
-          // j[1] is the data JSON object
-          
-          // Main car's localization Data
-          double car_x = j[1]["x"];
-          double car_y = j[1]["y"];
-          double car_s = j[1]["s"];
-          double car_d = j[1]["d"];
-          double car_yaw = j[1]["yaw"];
-          double car_speed = j[1]["speed"];
+    switchConditionsLane2_1->addChild(isOtherLaneFeasibleTaskFrom2_1);
+//
+    laneSwitch0_1->addChild(isLaneTask0_1);
+    laneSwitch0_1->addChild(switchConditionsLane0_1);
+    laneSwitch0_1->addChild(drive0_1);
+    switchConditionsLane0_1->addChild(isSomeoneCloseBeforeYouTaskFrom0_1);
+    switchConditionsLane0_1->addChild(isOtherLaneFeasibleTaskFrom0_1);
+//
 
-          // Previous path data given to the Planner
-          auto previous_path_x = j[1]["previous_path_x"];
-          auto previous_path_y = j[1]["previous_path_y"];
-          // Previous path's end s and d values 
-          double end_path_s = j[1]["end_path_s"];
-          double end_path_d = j[1]["end_path_d"];
-
-          // Sensor Fusion Data, a list of all other cars on the same side 
-          //   of the road.
-          auto sensor_fusion = j[1]["sensor_fusion"];
-
-          json msgJson;
-
-
-          /**
-           * TODO: define a path made up of (x,y) points that the car will visit
-           *   sequentially every .02 seconds
-           */
-            int prev_size = previous_path_x.size();
-
-
-            bool too_close = false;
-            bool too_close1 = false;
-            bool too_close2 = false;
-            
-            double min_speed = 999;
-            double min_pos = 999;
-            double min_speed1 = 999;
-            double min_pos1 = 999;
-            double min_speed2 = 999;
-            double min_pos2 = 999;
-            if(prev_size>0)
-            {
-                car_s = end_path_s;
-            }
-            
-            for(int i=0; i<sensor_fusion.size(); i++)
-            {
-                // get car lane
-                float d = sensor_fusion[i][6];
-
-                if(d>0*4 && d<4*(0+1))
-                {
-                    double vx = sensor_fusion[i][3];
-                    double vy = sensor_fusion[i][4];
-                    double speed = sqrt(vx*vx + vy*vy);
-                    double s = sensor_fusion[i][5];
+    root->addChild(new DriveTask(-1));
+    
+    h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
+                 &map_waypoints_dx,&map_waypoints_dy, &lane, &ref_vel, root, &map]
+                (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+                 uWS::OpCode opCode) {
                     
-                    double r = lane==0?0:10;
-
-                    
-                    double future_car_s = s + (prev_size*0.02)*speed+r;
-                    
-                    
-                    if((future_car_s>car_s) && ((future_car_s-car_s)<30))
-                    {
-                        if(future_car_s-car_s<min_pos)
-                        {
-                            min_pos = future_car_s-car_s;
-                            min_speed = speed;
+                    // "42" at the start of the message means there's a websocket message event.
+                    // The 4 signifies a websocket message
+                    // The 2 signifies a websocket event
+                    if (length && length > 2 && data[0] == '4' && data[1] == '2') {
+                        
+                        auto s = hasData(data);
+                        
+                        if (s != "") {
+                            auto j = json::parse(s);
+                            
+                            string event = j[0].get<string>();
+                            
+                            if (event == "telemetry") {
+                                // j[1] is the data JSON object
+                                
+                                // Main car's localization Data
+                                double car_x = j[1]["x"];
+                                double car_y = j[1]["y"];
+                                double car_s = j[1]["s"];
+                                double car_d = j[1]["d"];
+                                double car_yaw = j[1]["yaw"];
+                                double car_speed = j[1]["speed"];
+                                
+                                // Previous path data given to the Planner
+                                auto previous_path_x = j[1]["previous_path_x"];
+                                auto previous_path_y = j[1]["previous_path_y"];
+                                // Previous path's end s and d values
+                                double end_path_s = j[1]["end_path_s"];
+                                double end_path_d = j[1]["end_path_d"];
+                                
+                                // Sensor Fusion Data, a list of all other cars on the same side
+                                //   of the road.
+                                auto sensor_fusion = j[1]["sensor_fusion"];
+                          
+                                
+                                CarStatus carStatus;
+                                carStatus.car_x = car_x;
+                                carStatus.car_y = car_y;
+                                carStatus.car_s = car_s;
+                                carStatus.car_d = car_d;
+                                carStatus.car_yaw = car_yaw;
+                                carStatus.end_path_s = end_path_s;
+                                carStatus.end_path_d = end_path_d;
+                                //CarStatus::car_speed = ref_vel;
+                                carStatus.sensor_fusion = sensor_fusion;
+                                carStatus.previous_path_x = previous_path_x;
+                                carStatus.previous_path_y = previous_path_y;
+                                root->run(map, carStatus, ws);
+                            
+                                
+                                
+                            }  // end "telemetry" if
+                        } else {
+                            // Manual driving
+                            std::string msg = "42[\"manual\",{}]";
+                            
+                            ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
                         }
-                        too_close = true;
-                    }
-                }
-                
-                else if(d>(1)*4 && d<4*(1+1))
-                {
-                    double vx = sensor_fusion[i][3];
-                    double vy = sensor_fusion[i][4];
-                    double speed = sqrt(vx*vx + vy*vy);
-                    double s = sensor_fusion[i][5];
-                    
-                    double r = lane==1?0:10;
-
-                    double future_car_s = s + (prev_size*0.02)*speed+r;
-                    
-
-                    if((future_car_s>car_s) && ((future_car_s-car_s)<30))
-                    {
-                        if(future_car_s-car_s<min_pos1)
-                        {
-                            min_pos1 = future_car_s-car_s;
-                            min_speed1 = speed;
-                        }
-                        too_close1 = true;
-                    }
-                }
-                else if(d>(2)*4 && d<4*(2+1))
-                {
-                    double vx = sensor_fusion[i][3];
-                    double vy = sensor_fusion[i][4];
-                    double speed = sqrt(vx*vx + vy*vy);
-                    double s = sensor_fusion[i][5];
-                    
-                    double r = lane==2?0:10;
-
-                    double future_car_s = s + (prev_size*0.02)*speed+r;
-                    
-
-                    
-                    if((future_car_s>car_s) && ((future_car_s-car_s)<30))
-                    {
-                        if(future_car_s-car_s<min_pos2)
-                        {
-                            min_pos2 = future_car_s-car_s;
-                            min_speed2 = speed;
-                        }
-                        too_close2 = true;
-                    }
-                }
-            }
-            
-            cout<<round(car_d)<<"D"<<endl;
-            if(lane==0 and too_close and !too_close1)
-            {
-                if(round(car_d)==2)
-                    lane = 1;
-            }
-            else if (lane==1 and too_close1 and !too_close)
-            {
-                 if(round(car_d)==6)
-                     lane = 0;
-            }
-            else if(lane==1 and too_close1 and !too_close2)
-            {
-                if(round(car_d)==6)
-                {
-                    lane = 2;
-                }
-            }
-            else if (lane==2 and too_close2 and !too_close1)
-            {
-                if(round(car_d)==10)
-                    lane=1;
-            }
-            else if ((too_close1 and lane==1) | (too_close2 and lane==2) | (too_close and lane==0))
-            {
-                double speed_ = 0;
-                if(too_close1 and lane==1)
-                    speed_ = min_speed1;
-                else if (too_close2 and lane==2)
-                {
-                    speed_ = min_speed2;
-                }
-                else if (too_close and lane==0)
-                {
-                speed_ = min_speed;
-                }
-                ref_vel =min(49.5, max(speed_*2.24+0.001, ref_vel-0.224));
-                cout<<ref_vel<<"Lane="<<lane<<" D="<<round(car_d)<<" speed_:"<<speed_<<endl;
-            }
-            else
-            if(ref_vel<49.5)
-            {
-                ref_vel+=0.224;
-            }
-       
-            
-            vector<double> ptsX;
-            vector<double> ptsY;
-            
-            double ref_x = car_x;
-            double ref_y = car_y;
-            double ref_yaw = deg2rad(car_yaw);
-            
-            
-            // for initial stability
-            if (prev_size<2)
-            {
-                double prev_car_x = car_x - 1*cos(car_yaw);
-                double prev_car_y = car_y - 1*sin(car_yaw);
-                ptsX.push_back(prev_car_x);
-                ptsX.push_back(ref_x);
-                ptsY.push_back(prev_car_y);
-                ptsY.push_back(ref_y);
-
-            }
-            else
-            {
-                ref_x = previous_path_x[prev_size-1];
-                ref_y = previous_path_y[prev_size-1];
-                
-                double ref_x2 = previous_path_x[prev_size-2];
-                double ref_y2 = previous_path_y[prev_size-2];
-                ref_yaw = atan2(ref_y-ref_y2,ref_x-ref_x2);
-                
-                ptsX.push_back(ref_x2);
-                ptsX.push_back(ref_x);
-                ptsY.push_back(ref_y2);
-                ptsY.push_back(ref_y);
-            }
-            
-          vector<double> next_wp0 = getXY(car_s+30, (4*lane)+2, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-          vector<double> next_wp1 = getXY(car_s+60, (4*lane)+2, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-          vector<double> next_wp2 = getXY(car_s+90, (4*lane)+2, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-          
-         ptsX.push_back(next_wp0[0]);
-         ptsX.push_back(next_wp1[0]);
-         ptsX.push_back(next_wp2[0]);
-
-        ptsY.push_back(next_wp0[1]);
-        ptsY.push_back(next_wp1[1]);
-        ptsY.push_back(next_wp2[1]);
-            
-        for(int i=0; i<ptsX.size(); i++)
-        {
-            double shift_x = ptsX[i]-ref_x;
-            double shift_y = ptsY[i]-ref_y;
-            
-            ptsX[i] = (shift_x * cos(-ref_yaw) - shift_y*sin(-ref_yaw));
-            ptsY[i] = (shift_x * sin(-ref_yaw) + shift_y*cos(-ref_yaw));
-        }
-        
-            tk::spline s;
-            
-            s.set_points(ptsX, ptsY);
-            
-            vector<double> next_x_vals;
-            vector<double> next_y_vals;
-            
-            for(int i=0; i<previous_path_x.size(); i++)
-            {
-                next_x_vals.push_back(previous_path_x[i]);
-                next_y_vals.push_back((previous_path_y[i]));
-            }
-            
-            double target_x = 30.0;
-            double target_y = s(target_x);
-            double target_dist = sqrt((target_x*target_x)+(target_y*target_y));
-            
-            double n = target_dist / (0.02f/2.24 * ref_vel);
-            double add_x=0;
-            for(int i=0; i< 50 - previous_path_x.size(); i++)
-            {
-                double x_point = add_x + (target_x/n);
-                double y_point = s(x_point);
-                
-                add_x = x_point;
-                
-                double x_ref = x_point;
-                double y_ref = y_point;
-                
-                x_point = (x_ref * cos(ref_yaw) - y_ref*sin(ref_yaw));
-                y_point = (x_ref * sin(ref_yaw) + y_ref*cos(ref_yaw));
-                
-                x_point+=ref_x;
-                y_point+=ref_y;
-                
-                next_x_vals.push_back(x_point);
-                next_y_vals.push_back(y_point);
-            }
-        
-          msgJson["next_x"] = next_x_vals;
-          msgJson["next_y"] = next_y_vals;
-
-          auto msg = "42[\"control\","+ msgJson.dump()+"]";
-          ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-        }  // end "telemetry" if
-      } else {
-        // Manual driving
-        std::string msg = "42[\"manual\",{}]";
-
-        ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-      }
-    }  // end websocket if
-  }); // end h.onMessage
-
-  h.onConnection([&h](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req) {
-    std::cout << "Connected!!!" << std::endl;
-  });
-
-  h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code,
-                         char *message, size_t length) {
-    ws.close();
-    std::cout << "Disconnected" << std::endl;
-  });
-
-  int port = 4567;
-  if (h.listen(port)) {
-    std::cout << "Listening to port " << port << std::endl;
-  } else {
-    std::cerr << "Failed to listen to port" << std::endl;
-    return -1;
-  }
-  
-  h.run();
+                    }  // end websocket if
+                }); // end h.onMessage
+    
+    h.onConnection([&h](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req) {
+        std::cout << "Connected!!!" << std::endl;
+    });
+    
+    h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code,
+                           char *message, size_t length) {
+        ws.close();
+        std::cout << "Disconnected" << std::endl;
+    });
+    
+    int port = 4567;
+    if (h.listen(port)) {
+        std::cout << "Listening to port " << port << std::endl;
+    } else {
+        std::cerr << "Failed to listen to port" << std::endl;
+        return -1;
+    }
+    
+    h.run();
 }
+
