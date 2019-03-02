@@ -66,13 +66,24 @@ int main() {
     
     
     Selector *root = new Selector;  // Note that root can be either a Sequence or a Selector, since it has only one child.
+    
+    Sequence *avoidColisionDrive = new Sequence;
+    DriveTask *driveToEscapeColision  = new DriveTask(-1);
+    ColisionDetection *colisionDetection = new ColisionDetection;
+    ChangeSpeed *changeSpeedBeforeColision = new ChangeSpeed(15);
+    
+    
+//    root->addChild(avoidColisionDrive);
+//    avoidColisionDrive->addChild(colisionDetection);
+//    avoidColisionDrive->addChild(changeSpeedBeforeColision);
+//    avoidColisionDrive->addChild(driveToEscapeColision);
+
     Sequence * laneSwitch0 = new Sequence;  // In general there will be several nodes that are Sequence or Selector, so they should be suffixed by an integer to distinguish between them.
     IsLaneNumberTask * isLane0Task  = new IsLaneNumberTask(1);  // The door is initially closed and 5 meters away.
     Sequence *switchConditionsLane1 = new Sequence;  // Note that root can be either a Sequence or a Selector, since it has only one child.
     IsOtherLaneFeasibleTask *isOtherLaneFeasibleTaskFrom0 = new IsOtherLaneFeasibleTask(0);
     IsSomeoneCloseBeforeYouTask *isSomeoneCloseBeforeYouTask = new IsSomeoneCloseBeforeYouTask(1);
     //ChangeVelocityToTheClosestInLane *changeVelocityToTheClosestInLane  = new ChangeVelocityToTheClosestInLane(1);
-    DriveTask *drive1_0 = new DriveTask(0);
 
     Sequence * laneSwitch2 = new Sequence;  // In general there will be several nodes that are Sequence or Selector, so they should be suffixed by an integer to distinguish between them.
     IsLaneNumberTask * isLane2Task  = new IsLaneNumberTask(1);  // The door is initially closed and 5 meters away.
@@ -80,7 +91,6 @@ int main() {
     IsOtherLaneFeasibleTask *isOtherLaneFeasibleTaskFrom1_2 = new IsOtherLaneFeasibleTask(2);
     IsSomeoneCloseBeforeYouTask *isSomeoneCloseBeforeYouTask1_2 = new IsSomeoneCloseBeforeYouTask(1);
     //ChangeVelocityToTheClosestInLane *changeVelocityToTheClosestInLane  = new ChangeVelocityToTheClosestInLane(1);
-    DriveTask *drive1_2 = new DriveTask(2);
     
     
     Selector * laneSwitch1 = new Selector;  // In general there will be several nodes that are Sequence or Selector, so they should be suffixed by an integer to distinguish between them.
@@ -90,51 +100,58 @@ int main() {
     Sequence *switchConditionsLane2_1 = new Sequence;  // Note that root can be either a Sequence or a Selector, since it has only one child.
     IsOtherLaneFeasibleTask *isOtherLaneFeasibleTaskFrom2_1 = new IsOtherLaneFeasibleTask(1);
     IsSomeoneCloseBeforeYouTask *isSomeoneCloseBeforeYouTaskFrom2_1 = new IsSomeoneCloseBeforeYouTask(2);
-    DriveTask *drive2_1 = new DriveTask(1);
     
     Sequence * laneSwitch0_1 = new Sequence;
     IsLaneNumberTask * isLaneTask0_1  = new IsLaneNumberTask(0);  // The door is initially closed and 5 meters away.
     Sequence *switchConditionsLane0_1 = new Sequence;  // Note that root can be either a Sequence or a Selector, since it has only one child.
     IsOtherLaneFeasibleTask *isOtherLaneFeasibleTaskFrom0_1 = new IsOtherLaneFeasibleTask(1);
     IsSomeoneCloseBeforeYouTask *isSomeoneCloseBeforeYouTaskFrom0_1 = new IsSomeoneCloseBeforeYouTask(0);
-    DriveTask *drive0_1 = new DriveTask(1);
     
     
-    root->addChild(laneSwitch0);
-    
-    laneSwitch0->addChild (switchConditionsLane1);
     laneSwitch0->addChild (isLane0Task);
-    laneSwitch0->addChild(drive1_0);
+    laneSwitch0->addChild (switchConditionsLane1);
     switchConditionsLane1->addChild (isSomeoneCloseBeforeYouTask);
     switchConditionsLane1->addChild (isOtherLaneFeasibleTaskFrom0);
-    
-    root->addChild(laneSwitch2);
-    laneSwitch2->addChild (switchConditionsLane1_2);
+  
     laneSwitch2->addChild (isLane2Task);
-    laneSwitch2->addChild(drive1_2);
+    laneSwitch2->addChild (switchConditionsLane1_2);
     switchConditionsLane1_2->addChild (isSomeoneCloseBeforeYouTask1_2);
     switchConditionsLane1_2->addChild (isOtherLaneFeasibleTaskFrom1_2);
     
-    root->addChild(laneSwitch1);
     laneSwitch1->addChild(laneSwitch2_1);
     laneSwitch1->addChild(laneSwitch0_1);
 //
-    laneSwitch2_1->addChild(switchConditionsLane2_1);
     laneSwitch2_1->addChild(isLaneTask2_1);
-    laneSwitch2_1->addChild(drive2_1);
+    laneSwitch2_1->addChild(switchConditionsLane2_1);
     switchConditionsLane2_1->addChild(isSomeoneCloseBeforeYouTaskFrom2_1);
 
     switchConditionsLane2_1->addChild(isOtherLaneFeasibleTaskFrom2_1);
 //
-    laneSwitch0_1->addChild(switchConditionsLane0_1);
     laneSwitch0_1->addChild(isLaneTask0_1);
-    laneSwitch0_1->addChild(drive0_1);
+    laneSwitch0_1->addChild(switchConditionsLane0_1);
     switchConditionsLane0_1->addChild(isSomeoneCloseBeforeYouTaskFrom0_1);
     switchConditionsLane0_1->addChild(isOtherLaneFeasibleTaskFrom0_1);
 //
 
-    root->addChild(new DriveTask(-1));
+
+    Sequence *generalDrivingSequence = new Sequence;
+    DriveTask *generalDriving  = new DriveTask(-1);
+    AproximateSpeedBefore *aproximateSpeedBefore  = new AproximateSpeedBefore(-1);
+
+    generalDrivingSequence->addChild(aproximateSpeedBefore);
+    generalDrivingSequence->addChild(generalDriving);
     
+    Sequence *drive_change_lane = new Sequence;
+    Selector *drivingSelector = new Selector;
+    root->addChild(drive_change_lane);
+    
+    drivingSelector->addChild(laneSwitch0);
+    drivingSelector->addChild(laneSwitch1);
+    drivingSelector->addChild(laneSwitch2);
+    drive_change_lane->addChild(generalDrivingSequence);
+    drive_change_lane->addChild(drivingSelector);
+    
+
     h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
                  &map_waypoints_dx,&map_waypoints_dy, &lane, &ref_vel, root, &map]
                 (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
@@ -189,6 +206,12 @@ int main() {
                                 carStatus.previous_path_y = previous_path_y;
                                 root->run(map, carStatus, ws);
                             
+//                                cout.flush(); // Flush the output stream
+//                                
+//                                 system("clear");
+//                                
+                                
+                      
                                 
                                 
                             }  // end "telemetry" if

@@ -116,6 +116,7 @@ public:
     IsSomeoneCloseBeforeYouTask (int laneNumber): laneNumber(laneNumber){
     }
     virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
+        cout<<"IsSomeoneCloseBeforeYouTask";
         auto &sensor_fusion = status.sensor_fusion;
         bool found = false;
         
@@ -152,24 +153,26 @@ public:
                         minSpeed = speed*2.24;
                     }
                     
-                    //cout<<"true"<<"IsSomeoneC`
+                    found = true;
                 }
             }
         }
         //CarStatus::car_speed = 49.5
-        if(found)
-        {
-            cout<<"Decreasing car speed"<<endl;
-            CarStatus::car_speed = max(CarStatus::car_speed-0.224, min(CarStatus::car_speed, minSpeed));
-        }
-        else
-        {
-            cout<<"Increasing car speed"<<endl;
-            
-            CarStatus::car_speed = min(CarStatus::car_speed+0.224f, 49.5);
-        }
-        //
-        cout<<CarStatus::car_speed<<"SPEED"<<endl;
+        
+//
+//        if(found)
+//        {
+//            cout<<"Decreasing car speed"<<endl;
+//            CarStatus::car_speed = max(CarStatus::car_speed-0.224, min(CarStatus::car_speed, minSpeed));
+//        }
+//        else
+//        {
+//            cout<<"Increasing car speed"<<endl;
+//
+//            CarStatus::car_speed = min(CarStatus::car_speed+0.224f, 49.5);
+//        }
+//        //
+//        cout<<CarStatus::car_speed<<"SPEED"<<endl;
         cout<<"IsSomeoneCloseBeforeYouTask : Lane : "<<laneNumber<<" found:"<<found<<endl;
         return found;
     }
@@ -273,16 +276,16 @@ public:
         
         int lane = CarStatus::lane;
         
-        if (switchLane!=-1)
-        {
-            CarStatus::lane = lane = switchLane;
-            cout<<"Switching lane to"<<lane<<endl;
-            
-        }
-        else
-        {
-            cout<<"Going to the same direction"<<endl;
-        }
+//        if (switchLane!=-1)
+//        {
+//            CarStatus::lane = lane = switchLane;
+//            cout<<"Switching lane to"<<lane<<endl;
+//
+//        }
+//        else
+//        {
+//            cout<<"Going to the same direction"<<endl;
+//        }
         
         if (prev_size<2)
         {
@@ -421,6 +424,8 @@ public:
                 }
             }
         }
+        CarStatus::lane = laneNumber;
+        cout<<"SWITCHING TO LANE : "<<laneNumber;
         return true;
     }
 };
@@ -436,7 +441,7 @@ private:
     int laneNumber;
     
 public:
-    AproximateSpeedBefore (int laneNumber): laneNumber(laneNumber){
+    AproximateSpeedBefore (int laneNumber=-1): laneNumber(laneNumber){
     }
     virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
         auto &sensor_fusion = status.sensor_fusion;
@@ -447,10 +452,16 @@ public:
         int previos_size = status.previous_path_x.size();
         
         double car_s = status.car_s;
+        
+    
+        laneNumber = CarStatus::lane;
+      
+        
         if(previos_size>0)
         {
             car_s = status.end_path_s;
         }
+    
         
         for(int i=0; i<sensor_fusion.size(); i++)
         {
@@ -474,7 +485,7 @@ public:
                         minDistance=d;
                         minSpeed = speed*2.24;
                     }
-                    
+                    found = true;
                     //cout<<"true"<<"IsSomeoneC`
                 }
             }
@@ -494,7 +505,7 @@ public:
         
         cout<<CarStatus::car_speed<<"SPEED"<<endl;
         cout<<"AproximateSpeed : Lane : "<<laneNumber<<" found:"<<found<<endl;
-        return found;
+        return true;
     }
 };
 
@@ -510,7 +521,7 @@ public:
     }
     virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
         
-        if(speed>CarStatus::car_speed)
+        if(speed<CarStatus::car_speed)
             CarStatus::car_speed = max(CarStatus::car_speed-0.224, speed);
         
         else
@@ -527,12 +538,9 @@ public:
 class ColisionDetection : public Node {
     /*Check if someone is close to you in your track*/
     
-private:
-    int laneNumber;
-    
+
 public:
-    ColisionDetection (int laneNumber): laneNumber(laneNumber){
-    }
+
     virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
         auto &sensor_fusion = status.sensor_fusion;
         bool found = false;
@@ -541,6 +549,8 @@ public:
         
         double car_s = status.car_s;
         double car_d = status.car_d;
+        
+        bool colision = false;
         if(previos_size>0)
         {
             car_s = status.end_path_s;
@@ -562,15 +572,17 @@ public:
             if(future_car_s>car_s && future_car_s-car_s<8)
             {
                 
-                return true;
+                colision = true;
             }
             
             if(abs(car_s - s)<5 and abs(future_car_d-car_d)<1)
             {
-                return true;
+                colision = true;
             }
         }
         
-        return false;
+        cout<<"COLISION "<<colision<<endl;
+        
+        return colision;
     }
 };
