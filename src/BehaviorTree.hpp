@@ -140,7 +140,7 @@ public:
                 double vy = sensor_fusion[i][4];
                 double speed = sqrt(vx*vx + vy*vy);
                 double s = sensor_fusion[i][5];
-        
+                
                 double future_car_s = s + (previos_size*0.02)*speed;
                 
                 if(future_car_s>car_s && future_car_s-car_s<30)
@@ -152,22 +152,29 @@ public:
                         minSpeed = speed*2.24;
                     }
                     
-                    //cout<<"true"<<"IsSomeoneCloseBeforeYouTask"<<endl;
-                    found = true;
+                    //cout<<"true"<<"IsSomeoneC`
                 }
             }
         }
         //CarStatus::car_speed = 49.5
         if(found)
-            CarStatus::car_speed = max(CarStatus::car_speed-0.224, minSpeed);
-        
+        {
+            cout<<"Decreasing car speed"<<endl;
+            CarStatus::car_speed = max(CarStatus::car_speed-0.224, min(CarStatus::car_speed, minSpeed));
+        }
         else
-            CarStatus::car_speed = min(CarStatus::car_speed+0.224, 49.5);
-        
+        {
+            cout<<"Increasing car speed"<<endl;
+            
+            CarStatus::car_speed = min(CarStatus::car_speed+0.224f, 49.5);
+        }
+        //
+        cout<<CarStatus::car_speed<<"SPEED"<<endl;
         cout<<"IsSomeoneCloseBeforeYouTask : Lane : "<<laneNumber<<" found:"<<found<<endl;
         return found;
     }
 };
+
 
 
 //
@@ -419,3 +426,151 @@ public:
 };
 
 
+
+
+
+class AproximateSpeedBefore : public Node {
+    /*Check if someone is close to you in your track*/
+    
+private:
+    int laneNumber;
+    
+public:
+    AproximateSpeedBefore (int laneNumber): laneNumber(laneNumber){
+    }
+    virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
+        auto &sensor_fusion = status.sensor_fusion;
+        bool found = false;
+        
+        double minDistance=9999;
+        double minSpeed=99999;
+        int previos_size = status.previous_path_x.size();
+        
+        double car_s = status.car_s;
+        if(previos_size>0)
+        {
+            car_s = status.end_path_s;
+        }
+        
+        for(int i=0; i<sensor_fusion.size(); i++)
+        {
+            // get car lane
+            float d = sensor_fusion[i][6];
+            
+            if(d>laneNumber*4 && d<4*(laneNumber+1))
+            {
+                double vx = sensor_fusion[i][3];
+                double vy = sensor_fusion[i][4];
+                double speed = sqrt(vx*vx + vy*vy);
+                double s = sensor_fusion[i][5];
+                
+                double future_car_s = s + (previos_size*0.02)*speed;
+                
+                if(future_car_s>car_s && future_car_s-car_s<30)
+                {
+                    double d = future_car_s-car_s;
+                    if(minDistance>d)
+                    {
+                        minDistance=d;
+                        minSpeed = speed*2.24;
+                    }
+                    
+                    //cout<<"true"<<"IsSomeoneC`
+                }
+            }
+        }
+        //CarStatus::car_speed = 49.5
+        if(found)
+        {
+            cout<<"Decreasing car speed"<<endl;
+            CarStatus::car_speed = max(CarStatus::car_speed-0.224, min(CarStatus::car_speed, minSpeed));
+        }
+        else
+        {
+            cout<<"Increasing car speed"<<endl;
+            
+            CarStatus::car_speed = min(CarStatus::car_speed+0.224f, 49.5);
+        }
+        
+        cout<<CarStatus::car_speed<<"SPEED"<<endl;
+        cout<<"AproximateSpeed : Lane : "<<laneNumber<<" found:"<<found<<endl;
+        return found;
+    }
+};
+
+
+class ChangeSpeed : public Node {
+    /*Check if someone is close to you in your track*/
+    
+private:
+    double speed;
+    
+public:
+    ChangeSpeed (double speed): speed(speed){
+    }
+    virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
+        
+        if(speed>CarStatus::car_speed)
+            CarStatus::car_speed = max(CarStatus::car_speed-0.224, speed);
+        
+        else
+        {
+            cout<<"Increasing car speed"<<endl;
+            
+            CarStatus::car_speed = min(CarStatus::car_speed+0.224f, speed);
+        }
+    }
+    
+};
+
+
+class ColisionDetection : public Node {
+    /*Check if someone is close to you in your track*/
+    
+private:
+    int laneNumber;
+    
+public:
+    ColisionDetection (int laneNumber): laneNumber(laneNumber){
+    }
+    virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
+        auto &sensor_fusion = status.sensor_fusion;
+        bool found = false;
+        
+        int previos_size = status.previous_path_x.size();
+        
+        double car_s = status.car_s;
+        double car_d = status.car_d;
+        if(previos_size>0)
+        {
+            car_s = status.end_path_s;
+        }
+        
+        for(int i=0; i<sensor_fusion.size(); i++)
+        {
+            // get car lane
+            float d = sensor_fusion[i][6];
+            
+            double vx = sensor_fusion[i][3];
+            double vy = sensor_fusion[i][4];
+            double speed = sqrt(vx*vx + vy*vy);
+            double s = sensor_fusion[i][5];
+            
+            double future_car_s = s + (previos_size*0.02)*speed;
+            double future_car_d = d + (4*0.02)*speed;
+            
+            if(future_car_s>car_s && future_car_s-car_s<8)
+            {
+                
+                return true;
+            }
+            
+            if(abs(car_s - s)<5 and abs(future_car_d-car_d)<1)
+            {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+};

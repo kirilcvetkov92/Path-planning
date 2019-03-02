@@ -102,15 +102,15 @@ int main() {
     
     root->addChild(laneSwitch0);
     
-    laneSwitch0->addChild (isLane0Task);
     laneSwitch0->addChild (switchConditionsLane1);
+    laneSwitch0->addChild (isLane0Task);
     laneSwitch0->addChild(drive1_0);
     switchConditionsLane1->addChild (isSomeoneCloseBeforeYouTask);
     switchConditionsLane1->addChild (isOtherLaneFeasibleTaskFrom0);
     
     root->addChild(laneSwitch2);
-    laneSwitch2->addChild (isLane2Task);
     laneSwitch2->addChild (switchConditionsLane1_2);
+    laneSwitch2->addChild (isLane2Task);
     laneSwitch2->addChild(drive1_2);
     switchConditionsLane1_2->addChild (isSomeoneCloseBeforeYouTask1_2);
     switchConditionsLane1_2->addChild (isOtherLaneFeasibleTaskFrom1_2);
@@ -119,15 +119,15 @@ int main() {
     laneSwitch1->addChild(laneSwitch2_1);
     laneSwitch1->addChild(laneSwitch0_1);
 //
-    laneSwitch2_1->addChild(isLaneTask2_1);
     laneSwitch2_1->addChild(switchConditionsLane2_1);
+    laneSwitch2_1->addChild(isLaneTask2_1);
     laneSwitch2_1->addChild(drive2_1);
     switchConditionsLane2_1->addChild(isSomeoneCloseBeforeYouTaskFrom2_1);
 
     switchConditionsLane2_1->addChild(isOtherLaneFeasibleTaskFrom2_1);
 //
-    laneSwitch0_1->addChild(isLaneTask0_1);
     laneSwitch0_1->addChild(switchConditionsLane0_1);
+    laneSwitch0_1->addChild(isLaneTask0_1);
     laneSwitch0_1->addChild(drive0_1);
     switchConditionsLane0_1->addChild(isSomeoneCloseBeforeYouTaskFrom0_1);
     switchConditionsLane0_1->addChild(isOtherLaneFeasibleTaskFrom0_1);
