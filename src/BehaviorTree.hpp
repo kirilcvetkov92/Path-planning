@@ -17,9 +17,10 @@
 #include "spline.h"
 #include "json.hpp"
 #include "math.h"
-
+#include "Settings.h"
 
 using namespace std;
+using namespace Settings;
 
 struct Map{
     vector<double> waypoints_x;
@@ -88,7 +89,7 @@ class LanePrioritySelector : public CompositeNode {
     
 public:
     
-    double estimate( nlohmann::json  &sensorFusion, int laneNumber, int currentLaneNumber, double current_s)
+    double estimate( nlohmann::json  &sensorFusion, int laneNumber, int currentLaneNumber, double currentS)
     {
         double avgSpeed = 0;
         double count=0;
@@ -98,15 +99,17 @@ public:
             float d = sensorFusion[i][6];
             double s = sensorFusion[i][5];
             
-            if(d>laneNumber*4 && d<4*(laneNumber+1) && abs(current_s-s)<100)
+            if(d>laneNumber*LANE_D_SIZE && d<LANE_D_SIZE*(laneNumber+1) && abs(currentS-s)<SENSOR_FUSION_RADIUS)
             {
-                if(current_s<s || ((current_s-s)<5 && abs(laneNumber-currentLaneNumber)==1))
+                bool closeCarBelow = ((currentS-s)<CLOSE_BELOW_THRESHOLD && abs(laneNumber-currentLaneNumber)==1);
+                bool closeCarAbove = currentS<s;
+                if(closeCarAbove || closeCarBelow)
                 {
                     count++;
                     double vx = sensorFusion[i][3];
                     double vy = sensorFusion[i][4];
                     avgSpeed += sqrt(vx*vx + vy*vy);
-                    minDistance = min(s-current_s, minDistance);
+                    minDistance = min(s-currentS, minDistance);
                 }
             }
         }
@@ -115,8 +118,8 @@ public:
             minDistance=0;
         
         avgSpeed=(avgSpeed+0.1)/count;
-        double numerator = (avgSpeed/20) + minDistance/40;
-        double denominator = (count*1.9)+1e-8;
+        double numerator = (avgSpeed/HyperParams::SPEED_SCALE) + minDistance/HyperParams::DISTANCE_SCALE;
+        double denominator = (count*HyperParams::COUNT_SCALE)+1e-8;
         
         double cost  = 1/(1+exp(-(numerator/denominator)));
         
@@ -248,9 +251,9 @@ public:
             ptsY.push_back(ref_y);
         }
         
-        vector<double> next_wp0 = helpers::getXY(car_s+30.0, (4*lane)+2, map.waypoints_s, map.waypoints_x, map.waypoints_y);
-        vector<double> next_wp1 = helpers::getXY(car_s+60.0, (4*lane)+2, map.waypoints_s, map.waypoints_x, map.waypoints_y);
-        vector<double> next_wp2 = helpers::getXY(car_s+90.0, (4*lane)+2, map.waypoints_s, map.waypoints_x, map.waypoints_y);
+        vector<double> next_wp0 = helpers::getXY(car_s+CONFIDENT_DISTANCE, (LANE_D_SIZE*lane)+LANE_D_SIZE/2, map.waypoints_s, map.waypoints_x, map.waypoints_y);
+        vector<double> next_wp1 = helpers::getXY(car_s+CONFIDENT_DISTANCE*2, (LANE_D_SIZE*lane)+LANE_D_SIZE/2, map.waypoints_s, map.waypoints_x, map.waypoints_y);
+        vector<double> next_wp2 = helpers::getXY(car_s+CONFIDENT_DISTANCE*3, (LANE_D_SIZE*lane)+LANE_D_SIZE/2, map.waypoints_s, map.waypoints_x, map.waypoints_y);
         
         ptsX.push_back(next_wp0[0]);
         ptsX.push_back(next_wp1[0]);
@@ -282,13 +285,13 @@ public:
             next_y_vals.push_back((previous_path_y[i]));
         }
         
-        double target_x = 30.0;
+        double target_x = CONFIDENT_DISTANCE;
         double target_y = s(target_x);
         double target_dist = sqrt((target_x*target_x)+(target_y*target_y));
         
         double n = target_dist / (0.02f/2.24 * CarStatus::car_speed);
         double add_x=0;
-        for(int i=0; i< 50 - previous_path_x.size(); i++)
+        for(int i=0; i< NUMBER_WAY_POINTS - previous_path_x.size(); i++)
         {
             double x_point = add_x + (target_x/n);
             double y_point = s(x_point);
@@ -359,12 +362,12 @@ public:
                 double future_car_s = s + (previos_size*0.02)*speed+r;
                 
                 //todo refactor
-                if(car_s>s and future_car_s>car_s && future_car_s-car_s<30)
+                if(car_s>s and future_car_s>car_s && future_car_s-car_s<CONFIDENT_DISTANCE)
                 {
                     return false;
                 }
                 future_car_s-=10;
-                if(car_s<s and future_car_s>car_s && future_car_s-car_s<30)
+                if(car_s<s and future_car_s>car_s && future_car_s-car_s<CONFIDENT_DISTANCE)
                 {
                     cout<<"CANNOT SWITCH TO LANE : "<<laneNumber;
                     return false;
@@ -408,7 +411,7 @@ public:
         {
             float d = sensor_fusion[i][6];
             
-            if(d>laneNumber*4 && d<4*(laneNumber+1))
+            if(d>laneNumber*LANE_D_SIZE && d<LANE_D_SIZE*(laneNumber+1))
             {
                 double vx = sensor_fusion[i][3];
                 double vy = sensor_fusion[i][4];
@@ -433,10 +436,10 @@ public:
         if(found)
         {
             cout<<"FOUND"<<endl;
-            CarStatus::car_speed = max(CarStatus::car_speed-0.224, min(CarStatus::car_speed, minSpeed));
+            CarStatus::car_speed = max(CarStatus::car_speed-TIME_STEP, min(CarStatus::car_speed, minSpeed));
         }
         else
-            CarStatus::car_speed = min(CarStatus::car_speed+0.224f, 49.5);
+            CarStatus::car_speed = min(CarStatus::car_speed+TIME_STEP, MAX_SPEED);
         return true;
     }
 };
@@ -456,11 +459,11 @@ public:
         if(speed<CarStatus::car_speed)
         {
             cout<<"DETECTED COLISION"<<endl;
-            CarStatus::car_speed = max(CarStatus::car_speed-0.224, speed);
+            CarStatus::car_speed = max(CarStatus::car_speed-TIME_STEP, speed);
         }
         
         else
-            CarStatus::car_speed = min(CarStatus::car_speed+0.224f, speed);
+            CarStatus::car_speed = min(CarStatus::car_speed+TIME_STEP, speed);
         
         return true;
     }
@@ -501,12 +504,12 @@ public:
             
             if(abs((int)car_d/4 - (int)d/4)==0 && future_car_s>car_s && future_car_s-car_s<5)
             {
-                cout<<"COLISION 1";
+                cout<<"COLISION TYPE 1"<<endl;
                 colision = true;
             }
             if(abs(car_d - d)<2.8 and abs(status.car_s - s)<1)
             {
-                cout<<"COLISION 2"<<" "<<abs(car_d - d)<<" "<<abs(status.car_s - s)<<endl;
+                cout<<"COLISION TYPE 2"<<" "<<abs(car_d - d)<<" "<<abs(status.car_s - s)<<endl;
                 colision = true;
             }
         }
