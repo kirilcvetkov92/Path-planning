@@ -514,14 +514,8 @@ public:
     }
     virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
         
-        if(CarStatus::car_speed < 20)
-        {
-            return false;
-            cout<<"CAR SPEED VIOLATED";
-        }
         if(laneNumber==CarStatus::lane)
         {
-            cout<<"SWITCHING TO LANE : PRVO"<<laneNumber<<endl;
             return true;
         }
         
@@ -550,14 +544,12 @@ public:
                 double r = 10;
                 double future_car_s = s + (previos_size*0.02)*speed+r;
                 
-                if(car_s>s and future_car_s>car_s && future_car_s-car_s<27)
+                if(car_s>s and future_car_s>car_s && future_car_s-car_s<30)
                 {
-                    //cout<<"CANNOT GO TO LANE : "<<laneNumber;
-
                     return false;
                 }
                 future_car_s-=10;
-                if(car_s<s and future_car_s>car_s && future_car_s-car_s<27)
+                if(car_s<s and future_car_s>car_s && future_car_s-car_s<30)
                 {
                     cout<<"CANNOT GO TO LANE : "<<laneNumber;
 
