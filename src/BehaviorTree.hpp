@@ -11,6 +11,7 @@
 #include <math.h>
 #include <algorithm>
 #include <vector>
+#include <climits>
 #include <uWS/uWS.h>
 
 #include "helpers.h"
