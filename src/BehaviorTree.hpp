@@ -138,12 +138,14 @@ public:
         
         std::sort(std::begin(children_ ), std::end(children_), compare);
         
-        cout<<"PRIORITET: "<<children_[0]->id<<" "<<children_[1]->id<<" "<<children_[2]->id<<endl;
+ 
         
         if(abs(children_[0]->id-children_[1]->id)>1 && CarStatus::lane!=1)
         {
             swap(children_[1], children_[2]);
         }
+        
+               cout<<"PRIORITET: "<<children_[0]->id<<" "<<children_[1]->id<<" "<<children_[2]->id<<endl;
         
         for (int i=0; i<children_.size()-1; i++) {
             Node *child  = children_[i];
@@ -215,7 +217,7 @@ public:
    
         int lane = CarStatus::lane;
         
-        if(switchLane==-1)
+        if(switchLane!=-1)
         {
             lane = switchLane;
         }
@@ -429,7 +431,10 @@ public:
         }
         
         if(found)
+        {
+            cout<<"FOUND"<<endl;
             CarStatus::car_speed = max(CarStatus::car_speed-0.224, min(CarStatus::car_speed, minSpeed));
+        }
         else
             CarStatus::car_speed = min(CarStatus::car_speed+0.224f, 49.5);
         return true;
@@ -449,7 +454,10 @@ public:
     virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
         
         if(speed<CarStatus::car_speed)
+        {
+            cout<<"DETECTED COLISION"<<endl;
             CarStatus::car_speed = max(CarStatus::car_speed-0.224, speed);
+        }
         
         else
             CarStatus::car_speed = min(CarStatus::car_speed+0.224f, speed);
@@ -493,10 +501,12 @@ public:
             
             if(abs((int)car_d/4 - (int)d/4)==0 && future_car_s>car_s && future_car_s-car_s<5)
             {
+                cout<<"COLISION 1";
                 colision = true;
             }
-            if(abs(car_d - d)<2.8 and abs(car_s - s)<4)
+            if(abs(car_d - d)<2.8 and abs(status.car_s - s)<1)
             {
+                cout<<"COLISION 2"<<" "<<abs(car_d - d)<<" "<<abs(status.car_s - s)<<endl;
                 colision = true;
             }
         }
