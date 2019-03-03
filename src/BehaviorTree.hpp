@@ -84,8 +84,6 @@ public:
     }
 };
 
-
-
 class LanePrioritySelector : public CompositeNode {
     
 public:
@@ -102,8 +100,6 @@ public:
             
             if(d>laneNumber*4 && d<4*(laneNumber+1) && abs(current_s-s)<100)
             {
-                
-                
                 if(current_s<s || ((current_s-s)<5 && abs(laneNumber-currentLaneNumber)==1))
                 {
                     count++;
@@ -114,10 +110,10 @@ public:
                 }
             }
         }
+        
         if(minDistance==INT_MAX)
-        {
             minDistance=0;
-        }
+        
         avgSpeed=(avgSpeed+0.1)/count;
         double numerator = (avgSpeed/20) + minDistance/40;
         double denominator = (count*1.9)+1e-8;
@@ -153,16 +149,11 @@ public:
             Node *child  = children_[i];
             
             if(child->id==CarStatus::lane)
-            {
                 return true;
-            }
             
             if (child->run(map, carStatus, ws))
-            {
                 return true;
-            }
         }
-        
         return false;
     }
 };
@@ -180,13 +171,13 @@ public:
     }
 };
 
-class IsLaneNumberTask : public Node {
+class IsCurrentLaneCheck : public Node {
     /*Check we are in the middle of the lane*/
     
 private:
     int laneNumber;
 public:
-    IsLaneNumberTask (int laneNumber) : laneNumber(laneNumber) {
+    IsCurrentLaneCheck (int laneNumber) : laneNumber(laneNumber) {
         this->laneNumber = laneNumber;
     }
     virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
@@ -195,12 +186,10 @@ public:
     }
 };
 
-
 class DriveTask : public Node {
     /*Check we are in the middle of the lane*/
-    
 private:
-    int switchLane=-1;
+    int switchLane;
 public:
     DriveTask (int switchLane=-1): switchLane(switchLane){
     }
@@ -215,7 +204,7 @@ public:
         
         double ref_x = status.car_x;
         double ref_y = status.car_y;
-        double ref_yaw = 0;//helpers::deg2rad(status->car_yaw);
+        double ref_yaw = 0;
         
         auto previous_path_x = status.previous_path_x;
         auto previous_path_y = status.previous_path_y;
@@ -223,14 +212,16 @@ public:
         
         auto car_s = status.car_s;
         
-        if(prev_size>0)
-        {
-            car_s = status.end_path_s;
-        }
-        
+   
         int lane = CarStatus::lane;
         
-
+        if(switchLane==-1)
+        {
+            lane = switchLane;
+        }
+        if(prev_size>0)
+            car_s = status.end_path_s;
+        
         if (prev_size<2)
         {
             double prev_car_x = car_x - 1*cos(car_yaw);
@@ -239,7 +230,6 @@ public:
             ptsX.push_back(ref_x);
             ptsY.push_back(prev_car_y);
             ptsY.push_back(ref_y);
-            
         }
         else
         {
@@ -328,13 +318,12 @@ public:
 };
 
 
-class IsOtherLaneFeasibleTask : public Node {
+class SwitchToOtherLaneIfFeasibleTask : public Node {
     /*Check if someone is close to you in your track*/
-    
 private:
     int laneNumber;
 public:
-    IsOtherLaneFeasibleTask (int laneNumber) :  laneNumber(laneNumber) {
+    SwitchToOtherLaneIfFeasibleTask (int laneNumber) :  laneNumber(laneNumber) {
     }
     virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
         
@@ -346,7 +335,6 @@ public:
         auto &sensor_fusion = status.sensor_fusion;
         for(int i=0; i<sensor_fusion.size(); i++)
         {
-            // get car lane
             float d = sensor_fusion[i][6];
             
             double car_s = status.car_s;
@@ -376,8 +364,7 @@ public:
                 future_car_s-=10;
                 if(car_s<s and future_car_s>car_s && future_car_s-car_s<30)
                 {
-                    cout<<"CANNOT GO TO LANE : "<<laneNumber;
-
+                    cout<<"CANNOT SWITCH TO LANE : "<<laneNumber;
                     return false;
                 }
             }
@@ -389,17 +376,14 @@ public:
 };
 
 
-
-
-
-class AproximateSpeedBefore : public Node {
+class AproximateSpeedFrontCarTask : public Node {
     /*Check if someone is close to you in your track*/
     
 private:
     int laneNumber;
     
 public:
-    AproximateSpeedBefore (int laneNumber=-1): laneNumber(laneNumber){
+    AproximateSpeedFrontCarTask (int laneNumber=-1): laneNumber(laneNumber){
     }
     virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
         auto &sensor_fusion = status.sensor_fusion;
@@ -443,14 +427,11 @@ public:
                 }
             }
         }
+        
         if(found)
-        {
             CarStatus::car_speed = max(CarStatus::car_speed-0.224, min(CarStatus::car_speed, minSpeed));
-        }
         else
-        {
             CarStatus::car_speed = min(CarStatus::car_speed+0.224f, 49.5);
-        }
         return true;
     }
 };
@@ -471,13 +452,10 @@ public:
             CarStatus::car_speed = max(CarStatus::car_speed-0.224, speed);
         
         else
-        {
-            //cout<<"Increasing car speed"<<endl;
-            
             CarStatus::car_speed = min(CarStatus::car_speed+0.224f, speed);
-        }
+        
+        return true;
     }
-    
 };
 
 
@@ -489,7 +467,6 @@ public:
 
     virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
         auto &sensor_fusion = status.sensor_fusion;
-        bool found = false;
         
         int previos_size = status.previous_path_x.size();
         
@@ -516,17 +493,13 @@ public:
             
             if(abs((int)car_d/4 - (int)d/4)==0 && future_car_s>car_s && future_car_s-car_s<5)
             {
-                //cout<<"COLISION S"<<endl;
                 colision = true;
             }
             if(abs(car_d - d)<2.8 and abs(car_s - s)<4)
             {
-                //cout<<"COLISION D"<<endl;
                 colision = true;
             }
         }
-        
-        //cout<<"COLISION "<<colision<<endl;
         
         return colision;
     }

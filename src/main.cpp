@@ -80,29 +80,29 @@ int main() {
     
     
     Sequence * laneSwitch0 = new Sequence(0);  // In general there will be several nodes that are Sequence or Selector, so they should be suffixed by an integer to distinguish between them.
-    IsLaneNumberTask * isLane0Task  = new IsLaneNumberTask(1);  // The door is initially closed and 5 meters away.
+    IsCurrentLaneCheck * isLane0Task  = new IsCurrentLaneCheck(1);  // The door is initially closed and 5 meters away.
     Sequence *switchConditionsLane1 = new Sequence;  // Note that root can be either a Sequence or a Selector, since it has only one child.
-    IsOtherLaneFeasibleTask *isOtherLaneFeasibleTaskFrom0 = new IsOtherLaneFeasibleTask(0);
+    SwitchToOtherLaneIfFeasibleTask *isOtherLaneFeasibleTaskFrom0 = new SwitchToOtherLaneIfFeasibleTask(0);
     //ChangeVelocityToTheClosestInLane *changeVelocityToTheClosestInLane  = new ChangeVelocityToTheClosestInLane(1);
 
     Sequence * laneSwitch2 = new Sequence(2);  // In general there will be several nodes that are Sequence or Selector, so they should be suffixed by an integer to distinguish between them.
-    IsLaneNumberTask * isLane2Task  = new IsLaneNumberTask(1);  // The door is initially closed and 5 meters away.
+    IsCurrentLaneCheck * isLane2Task  = new IsCurrentLaneCheck(1);  // The door is initially closed and 5 meters away.
     Sequence *switchConditionsLane1_2 = new Sequence;  // Note that root can be either a Sequence or a Selector, since it has only one child.
-    IsOtherLaneFeasibleTask *isOtherLaneFeasibleTaskFrom1_2 = new IsOtherLaneFeasibleTask(2);
+    SwitchToOtherLaneIfFeasibleTask *isOtherLaneFeasibleTaskFrom1_2 = new SwitchToOtherLaneIfFeasibleTask(2);
     //ChangeVelocityToTheClosestInLane *changeVelocityToTheClosestInLane  = new ChangeVelocityToTheClosestInLane(1);
     
     
     Selector * laneSwitch1 = new Selector(1);  // In general there will be several nodes that are Sequence or Selector, so they should be suffixed by an integer to distinguish between them.
     
     Sequence * laneSwitch2_1 = new Sequence;
-    IsLaneNumberTask * isLaneTask2_1  = new IsLaneNumberTask(2);  // The door is initially closed and 5 meters away.
+    IsCurrentLaneCheck * isLaneTask2_1  = new IsCurrentLaneCheck(2);  // The door is initially closed and 5 meters away.
     Sequence *switchConditionsLane2_1 = new Sequence;  // Note that root can be either a Sequence or a Selector, since it has only one child.
-    IsOtherLaneFeasibleTask *isOtherLaneFeasibleTaskFrom2_1 = new IsOtherLaneFeasibleTask(1);
+    SwitchToOtherLaneIfFeasibleTask *isOtherLaneFeasibleTaskFrom2_1 = new SwitchToOtherLaneIfFeasibleTask(1);
     
     Sequence * laneSwitch0_1 = new Sequence;
-    IsLaneNumberTask * isLaneTask0_1  = new IsLaneNumberTask(0);  // The door is initially closed and 5 meters away.
+    IsCurrentLaneCheck * isLaneTask0_1  = new IsCurrentLaneCheck(0);  // The door is initially closed and 5 meters away.
     Sequence *switchConditionsLane0_1 = new Sequence;  // Note that root can be either a Sequence or a Selector, since it has only one child.
-    IsOtherLaneFeasibleTask *isOtherLaneFeasibleTaskFrom0_1 = new IsOtherLaneFeasibleTask(1);
+    SwitchToOtherLaneIfFeasibleTask *isOtherLaneFeasibleTaskFrom0_1 = new SwitchToOtherLaneIfFeasibleTask(1);
     
     
     laneSwitch0->addChild (isLane0Task);
@@ -133,7 +133,7 @@ int main() {
 
     Sequence *generalDrivingSequence = new Sequence;
     DriveTask *generalDriving  = new DriveTask(-1);
-    AproximateSpeedBefore *aproximateSpeedBefore  = new AproximateSpeedBefore(-1);
+    AproximateSpeedFrontCarTask *aproximateSpeedBefore  = new AproximateSpeedFrontCarTask(-1);
 
     generalDrivingSequence->addChild(aproximateSpeedBefore);
     generalDrivingSequence->addChild(generalDriving);
@@ -203,16 +203,9 @@ int main() {
                                 carStatus.sensor_fusion = sensor_fusion;
                                 carStatus.previous_path_x = previous_path_x;
                                 carStatus.previous_path_y = previous_path_y;
+                                
+                                //Behavior tree run :)
                                 root->run(map, carStatus, ws);
-                            
-//                                cout.flush(); // Flush the output stream
-//                                
-//                                 system("clear");
-//                                
-                                
-                      
-                                
-                                
                             }  // end "telemetry" if
                         } else {
                             // Manual driving
