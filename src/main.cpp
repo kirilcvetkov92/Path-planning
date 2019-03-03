@@ -79,20 +79,20 @@ int main() {
     avoidColisionDrive->addChild(driveToEscapeColision);
     
     
-    Sequence * laneSwitch0 = new Sequence;  // In general there will be several nodes that are Sequence or Selector, so they should be suffixed by an integer to distinguish between them.
+    Sequence * laneSwitch0 = new Sequence(0);  // In general there will be several nodes that are Sequence or Selector, so they should be suffixed by an integer to distinguish between them.
     IsLaneNumberTask * isLane0Task  = new IsLaneNumberTask(1);  // The door is initially closed and 5 meters away.
     Sequence *switchConditionsLane1 = new Sequence;  // Note that root can be either a Sequence or a Selector, since it has only one child.
     IsOtherLaneFeasibleTask *isOtherLaneFeasibleTaskFrom0 = new IsOtherLaneFeasibleTask(0);
     //ChangeVelocityToTheClosestInLane *changeVelocityToTheClosestInLane  = new ChangeVelocityToTheClosestInLane(1);
 
-    Sequence * laneSwitch2 = new Sequence;  // In general there will be several nodes that are Sequence or Selector, so they should be suffixed by an integer to distinguish between them.
+    Sequence * laneSwitch2 = new Sequence(2);  // In general there will be several nodes that are Sequence or Selector, so they should be suffixed by an integer to distinguish between them.
     IsLaneNumberTask * isLane2Task  = new IsLaneNumberTask(1);  // The door is initially closed and 5 meters away.
     Sequence *switchConditionsLane1_2 = new Sequence;  // Note that root can be either a Sequence or a Selector, since it has only one child.
     IsOtherLaneFeasibleTask *isOtherLaneFeasibleTaskFrom1_2 = new IsOtherLaneFeasibleTask(2);
     //ChangeVelocityToTheClosestInLane *changeVelocityToTheClosestInLane  = new ChangeVelocityToTheClosestInLane(1);
     
     
-    Selector * laneSwitch1 = new Selector;  // In general there will be several nodes that are Sequence or Selector, so they should be suffixed by an integer to distinguish between them.
+    Selector * laneSwitch1 = new Selector(1);  // In general there will be several nodes that are Sequence or Selector, so they should be suffixed by an integer to distinguish between them.
     
     Sequence * laneSwitch2_1 = new Sequence;
     IsLaneNumberTask * isLaneTask2_1  = new IsLaneNumberTask(2);  // The door is initially closed and 5 meters away.

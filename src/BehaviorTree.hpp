@@ -50,23 +50,31 @@ double CarStatus::car_speed = 0;
 double CarStatus::lane = 1;
 
 class Node {
+ 
 public:
-    int id=-1;
-public:
+    int id;
+    Node(){}
+    Node(int id) : id(id){}
     virtual bool run(Map &map, CarStatus &carStatus, uWS::WebSocket<uWS::SERVER> &ws) = 0;
 };
 
 class CompositeNode : public Node {
 public:
+    CompositeNode(){};
+    CompositeNode(int id) : Node(id){};
     std::vector<Node*> children;
 public:
     std::vector<Node*>& getChildren()  {return children;}
     
-    void addChild (Node* child) {children.push_back(child);}
+    void addChild (Node* child) {
+        children.push_back(child);
+    }
 };
 
 class Selector : public CompositeNode {
 public:
+    Selector(){};
+    Selector(int id) : CompositeNode(id){};
     virtual bool run(Map &map, CarStatus &carStatus, uWS::WebSocket<uWS::SERVER> &ws) override {
         for (Node* child : getChildren()) {
             if (child->run(map, carStatus, ws))
@@ -75,6 +83,7 @@ public:
         return false;
     }
 };
+
 
 
 class LanePrioritySelector : public CompositeNode {
@@ -90,7 +99,7 @@ public:
         {
             float d = sensorFusion[i][6];
             double s = sensorFusion[i][5];
-
+            
             if(d>laneNumber*4 && d<4*(laneNumber+1) && abs(current_s-s)<100)
             {
                 
@@ -112,42 +121,28 @@ public:
         avgSpeed=(avgSpeed+0.1)/count;
         double numerator = (avgSpeed/20) + minDistance/40;
         double denominator = (count*1.9)+1e-8;
-    
+        
         double cost  = 1/(1+exp(-(numerator/denominator)));
-
+        
         return cost;
-    }	
+    }
     virtual bool run(Map &map, CarStatus &carStatus, uWS::WebSocket<uWS::SERVER> &ws) override {
         
         auto &sensorFusion = carStatus.sensor_fusion;
         double currentLane = CarStatus::lane;
-        vector<Node*> children_;
-        
-        int cnt=1;
-        for (auto child : this->children)
-        {
-            if(child->id==-1)
-                child->id = cnt;
-            children_.push_back(child);
-            cnt=(cnt+1)%3;
-        }
+        vector<Node*> children_ = children;
 
         double currentS = carStatus.car_s;
-        for(int i=0; i<children_.size()-1; i++)
-        {
-            for(int j=i+1; j<children_.size(); j++)
-            {
-                double firstCost = estimate(sensorFusion, children_[i]->id, currentLane, currentS);
-                double secondCost = estimate(sensorFusion, children_[j]->id, currentLane, currentS);
-                if(firstCost<secondCost)
-                {
-                    std::swap(children_[i], children_[j]);
-                }
-            }
-        }
+        
+        auto compare = [&](Node *a, Node *b) {
+            double firstCost = estimate(sensorFusion, a->id, currentLane, currentS);
+            double secondCost = estimate(sensorFusion, b->id, currentLane, currentS);
+            return firstCost>secondCost;
+        };
+        
+        std::sort(std::begin(children_ ), std::end(children_), compare);
         
         cout<<"PRIORITET: "<<children_[0]->id<<" "<<children_[1]->id<<" "<<children_[2]->id<<endl;
-
         
         if(abs(children_[0]->id-children_[1]->id)>1 && CarStatus::lane!=1)
         {
@@ -163,19 +158,21 @@ public:
             {
                 return false;
             }
-
+            
             if (child->run(map, carStatus, ws))
             {
                 return true;
             }
         }
-
+        
         return false;
     }
 };
 
 class Sequence : public CompositeNode {
 public:
+    Sequence(){};
+    Sequence(int id) : CompositeNode(id){};
     virtual bool run(Map &map, CarStatus &carStatus, uWS::WebSocket<uWS::SERVER> &ws) override {
         for (Node* child : getChildren()) {
             if (!child->run(map, carStatus, ws))
