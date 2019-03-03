@@ -51,7 +51,7 @@ double CarStatus::car_speed = 0;
 double CarStatus::lane = 1;
 
 class Node {
- 
+    
 public:
     int id;
     Node(){}
@@ -130,7 +130,7 @@ public:
         auto &sensorFusion = carStatus.sensor_fusion;
         double currentLane = CarStatus::lane;
         vector<Node*> children_ = children;
-
+        
         double currentS = carStatus.car_s;
         
         auto compare = [&](Node *a, Node *b) {
@@ -141,14 +141,14 @@ public:
         
         std::sort(std::begin(children_ ), std::end(children_), compare);
         
- 
+        
         
         if(abs(children_[0]->id-children_[1]->id)>1 && CarStatus::lane!=1)
         {
             swap(children_[1], children_[2]);
         }
         
-               cout<<"PRIORITET: "<<children_[0]->id<<" "<<children_[1]->id<<" "<<children_[2]->id<<endl;
+        cout<<"PRIORITET: "<<children_[0]->id<<" "<<children_[1]->id<<" "<<children_[2]->id<<endl;
         
         for (int i=0; i<children_.size()-1; i++) {
             Node *child  = children_[i];
@@ -217,7 +217,7 @@ public:
         
         auto car_s = status.car_s;
         
-   
+        
         int lane = CarStatus::lane;
         
         if(switchLane!=-1)
@@ -401,12 +401,12 @@ public:
         double car_s = status.car_s;
         
         laneNumber = CarStatus::lane;
-      
+        
         if(previos_size>0)
         {
             car_s = status.end_path_s;
         }
-    
+        
         for(int i=0; i<sensor_fusion.size(); i++)
         {
             float d = sensor_fusion[i][6];
@@ -473,9 +473,9 @@ public:
 class ColisionDetection : public Node {
     /*Check if someone is close to you in your track*/
     
-
+    
 public:
-
+    
     virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
         auto &sensor_fusion = status.sensor_fusion;
         
