@@ -53,16 +53,19 @@ struct CarStatus {
 double CarStatus::car_speed = 0;
 double CarStatus::lane = 1;
 
-class Node { 
+class Node {
+public:
+    int id=-1;
 public:
     virtual bool run(Map &map, CarStatus &carStatus, uWS::WebSocket<uWS::SERVER> &ws) = 0;
 };
 
 class CompositeNode : public Node {
-private:
+public:
     std::vector<Node*> children;
 public:
     std::vector<Node*>& getChildren()  {return children;}
+    
     void addChild (Node* child) {children.push_back(child);}
 };
 
@@ -82,55 +85,108 @@ class LanePrioritySelector : public CompositeNode {
     
 public:
     
-    int estimate( nlohmann::json  &sensorFusion, int laneNumber, int currentLaneNumber)
+    double estimate( nlohmann::json  &sensorFusion, int laneNumber, int currentLaneNumber, double current_s)
     {
         double avgSpeed = 0;
         double count=0;
-
+        double minDistance = 99999;
         for(int i=0; i<sensorFusion.size(); i++)
         {
             float d = sensorFusion[i][6];
+            double s = sensorFusion[i][5];
 
-            if(d>laneNumber*4 && d<4*(laneNumber+1))
+            if(d>laneNumber*4 && d<4*(laneNumber+1) && abs(current_s-s)<100)
             {
-                count++;
-
-                double vx = sensorFusion[i][3];
-                double vy = sensorFusion[i][4];
-                avgSpeed += sqrt(vx*vx + vy*vy);
+                
+                
+                if(current_s<s || ((current_s-s)<5 && abs(laneNumber-currentLaneNumber)==1))
+                {
+                    count++;
+                    double vx = sensorFusion[i][3];
+                    double vy = sensorFusion[i][4];
+                    avgSpeed += sqrt(vx*vx + vy*vy);
+                    minDistance = min(s-current_s, minDistance);
+                }
             }
         }
-        avgSpeed/=count;
-        double numerator = (avgSpeed/5.0)+1e-1;
-        double denominator = (count)+1e-8;
-        double scaler = abs(laneNumber - currentLaneNumber)%2+1;
+        if(minDistance==99999)
+        {
+            minDistance=0;
+        }
+        //cout<<minDistance<<endl;
+        avgSpeed=(avgSpeed+0.1)/count;
+        double numerator = (avgSpeed/20) + minDistance/40;
+        double denominator = (count*1.9)+1e-8;
     
-        double cost  = 1 - exp(-(numerator/denominator) * scaler);
+        double cost  = 1/(1+exp(-(numerator/denominator)));
         
+        //cout<<"COST"<<" "<<laneNumber<<" "<<cost<<endl;
+//        if(laneNumber==1)
+//            return -5;
+        
+       cout<<"COST Lane:"<<laneNumber<<" - "<<cost<<endl;
         return cost;
-    }
+    }	
     virtual bool run(Map &map, CarStatus &carStatus, uWS::WebSocket<uWS::SERVER> &ws) override {
         
         auto &sensorFusion = carStatus.sensor_fusion;
         double currentLane = CarStatus::lane;
-        vector<Node*> &children = getChildren();
-  
-        for(int i=0; i<children.size()-1; i++)
+        vector<Node*> children_;
+        
+        int cnt=1;
+        for (auto child : this->children)
         {
-            for(int j=1; j<children.size(); j++)
+            if(child->id==-1)
+                child->id = cnt;
+            children_.push_back(child);
+            cnt=(cnt+1)%3;
+        }
+
+        double currentS = carStatus.car_s;
+        for(int i=0; i<children_.size()-1; i++)
+        {
+            for(int j=i+1; j<children_.size(); j++)
             {
-                double firstCost = estimate(sensorFusion, i, currentLane);
-                double secondCost = estimate(sensorFusion, j, currentLane);
-                if(firstCost>secondCost)
+                double firstCost = estimate(sensorFusion, children_[i]->id, currentLane, currentS);
+                double secondCost = estimate(sensorFusion, children_[j]->id, currentLane, currentS);
+                //cout<<"COST: "<<firstCost<<" "<<secondCost<<endl;
+                if(firstCost<secondCost)
                 {
-                    std::swap(children[i], children[j]);
+                    cout<<"swap "<<children_[i]->id<<" "<<children_[j]->id<<" "<<firstCost<<" "<<secondCost<<endl;
+                    std::swap(children_[i], children_[j]);
+                }
+                else {
+                   // cout<<"no switch for "<<i<<" "<<j<<endl;
                 }
             }
         }
-        for (Node* child : getChildren()) {
-            if (child->run(map, carStatus, ws))
-                return true;
+        if(abs(children_[0]->id-children_[1]->id)>1 && CarStatus::lane!=1)
+        {
+            swap(children_[1], children_[2]);
         }
+        cout<<"PRIORITET: "<<children_[0]->id<<" "<<children_[1]->id<<" "<<children_[2]->id<<endl;
+        for (int i=0; i<children_.size()-1; i++) {
+            Node *child  = children_[i];
+            if(child->id==CarStatus::lane and i<2)
+            {
+                return true;;
+            }
+            else if (child->id==CarStatus::lane)
+            {
+                return false;
+            }
+
+            cout<<"PRIORITET - "<<child->id<<endl;
+            if (child->run(map, carStatus, ws))
+            {
+                
+               cout<<"---------------"<<endl;
+
+                return true;
+            }
+        }
+       cout<<"---------------"<<endl;
+
         return false;
     }
 };
@@ -156,10 +212,15 @@ public:
         this->laneNumber = laneNumber;
     }
     virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
-        bool res = (round(status.car_d) == laneNumber*4+2 | round(status.car_d) == CarStatus::lane*4+2) and laneNumber==CarStatus::lane;
+        bool res = (round(status.car_d) == laneNumber*4+2 and laneNumber==CarStatus::lane) ;
         if (res)
         {
-            cout<<"Lane check passed => We are exactly on lane : "<<laneNumber<<endl;
+          //  cout<<"Lane check passed => We are exactly on lane : "<<laneNumber<<endl;
+        }
+        else
+        {
+            cout<<"FAIL WE EXPECT TO BE IN LANENUMBER"<<laneNumber<<endl;
+            cout<< round(status.car_d)<<"->cmp"<< CarStatus::lane*4+2 <<endl;
         }
         return res;
     }
@@ -175,7 +236,7 @@ public:
     IsSomeoneCloseBeforeYouTask (int laneNumber): laneNumber(laneNumber){
     }
     virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
-        cout<<"IsSomeoneCloseBeforeYouTask";
+        //cout<<"IsSomeoneCloseBeforeYouTask";
         auto &sensor_fusion = status.sensor_fusion;
         bool found = false;
         
@@ -232,7 +293,7 @@ public:
 //        }
 //        //
 //        cout<<CarStatus::car_speed<<"SPEED"<<endl;
-        cout<<"IsSomeoneCloseBeforeYouTask : Lane : "<<laneNumber<<" found:"<<found<<endl;
+       // cout<<"IsSomeoneCloseBeforeYouTask : Lane : "<<laneNumber<<" found:"<<found<<endl;
         return found;
     }
 };
@@ -452,6 +513,18 @@ public:
     IsOtherLaneFeasibleTask (int laneNumber) :  laneNumber(laneNumber) {
     }
     virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
+        
+        if(CarStatus::car_speed < 20)
+        {
+            return false;
+            cout<<"CAR SPEED VIOLATED";
+        }
+        if(laneNumber==CarStatus::lane)
+        {
+            cout<<"SWITCHING TO LANE : PRVO"<<laneNumber<<endl;
+            return true;
+        }
+        
         auto &sensor_fusion = status.sensor_fusion;
         for(int i=0; i<sensor_fusion.size(); i++)
         {
@@ -477,19 +550,23 @@ public:
                 double r = 10;
                 double future_car_s = s + (previos_size*0.02)*speed+r;
                 
-                if(car_s>s and future_car_s>car_s && future_car_s-car_s<30)
+                if(car_s>s and future_car_s>car_s && future_car_s-car_s<27)
                 {
+                    //cout<<"CANNOT GO TO LANE : "<<laneNumber;
+
                     return false;
                 }
                 future_car_s-=10;
-                if(car_s<s and future_car_s>car_s && future_car_s-car_s<30)
+                if(car_s<s and future_car_s>car_s && future_car_s-car_s<27)
                 {
+                    cout<<"CANNOT GO TO LANE : "<<laneNumber;
+
                     return false;
                 }
             }
         }
         CarStatus::lane = laneNumber;
-        cout<<"SWITCHING TO LANE : "<<laneNumber;
+        cout<<"SWITCHING TO LANE : "<<laneNumber<<endl;
         return true;
     }
 };
@@ -541,7 +618,7 @@ public:
                 
                 double future_car_s = s + (previos_size*0.02)*speed;
                 
-                if(future_car_s>car_s && future_car_s-car_s<30)
+                if(future_car_s>car_s && future_car_s-car_s<25)
                 {
                     double d = future_car_s-car_s;
                     if(minDistance>d)
@@ -557,18 +634,18 @@ public:
         //CarStatus::car_speed = 49.5
         if(found)
         {
-            cout<<"Decreasing car speed"<<endl;
+           // cout<<"Decreasing car speed"<<endl;
             CarStatus::car_speed = max(CarStatus::car_speed-0.224, min(CarStatus::car_speed, minSpeed));
         }
         else
         {
-            cout<<"Increasing car speed"<<endl;
+           // cout<<"Increasing car speed"<<endl;
             
             CarStatus::car_speed = min(CarStatus::car_speed+0.224f, 49.5);
         }
         
-        cout<<CarStatus::car_speed<<"SPEED"<<endl;
-        cout<<"AproximateSpeed : Lane : "<<laneNumber<<" found:"<<found<<endl;
+        //cout<<CarStatus::car_speed<<"SPEED"<<endl;
+        //cout<<"AproximateSpeed : Lane : "<<laneNumber<<" found:"<<found<<endl;
         return true;
     }
 };
@@ -590,7 +667,7 @@ public:
         
         else
         {
-            cout<<"Increasing car speed"<<endl;
+            //cout<<"Increasing car speed"<<endl;
             
             CarStatus::car_speed = min(CarStatus::car_speed+0.224f, speed);
         }
@@ -634,17 +711,17 @@ public:
             
             if(abs((int)car_d/4 - (int)d/4)==0 && future_car_s>car_s && future_car_s-car_s<5)
             {
-                cout<<"COLISION S"<<endl;
+                //cout<<"COLISION S"<<endl;
                 colision = true;
             }
             if(abs(car_d - d)<2.8 and abs(car_s - s)<4)
             {
-                cout<<"COLISION D"<<endl;
+                //cout<<"COLISION D"<<endl;
                 colision = true;
             }
         }
         
-        cout<<"COLISION "<<colision<<endl;
+        //cout<<"COLISION "<<colision<<endl;
         
         return colision;
     }

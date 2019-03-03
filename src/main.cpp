@@ -111,12 +111,12 @@ int main() {
     
     laneSwitch0->addChild (isLane0Task);
     laneSwitch0->addChild (switchConditionsLane1);
-    switchConditionsLane1->addChild (isSomeoneCloseBeforeYouTask);
+    //switchConditionsLane1->addChild (isSomeoneCloseBeforeYouTask);
     switchConditionsLane1->addChild (isOtherLaneFeasibleTaskFrom0);
   
     laneSwitch2->addChild (isLane2Task);
     laneSwitch2->addChild (switchConditionsLane1_2);
-    switchConditionsLane1_2->addChild (isSomeoneCloseBeforeYouTask1_2);
+    //switchConditionsLane1_2->addChild (isSomeoneCloseBeforeYouTask1_2);
     switchConditionsLane1_2->addChild (isOtherLaneFeasibleTaskFrom1_2);
     
     laneSwitch1->addChild(laneSwitch2_1);
@@ -124,16 +124,16 @@ int main() {
 //
     laneSwitch2_1->addChild(isLaneTask2_1);
     laneSwitch2_1->addChild(switchConditionsLane2_1);
-    switchConditionsLane2_1->addChild(isSomeoneCloseBeforeYouTaskFrom2_1);
+    //switchConditionsLane2_1->addChild(isSomeoneCloseBeforeYouTaskFrom2_1);
 
     switchConditionsLane2_1->addChild(isOtherLaneFeasibleTaskFrom2_1);
 //
     laneSwitch0_1->addChild(isLaneTask0_1);
     laneSwitch0_1->addChild(switchConditionsLane0_1);
-    switchConditionsLane0_1->addChild(isSomeoneCloseBeforeYouTaskFrom0_1);
+    //switchConditionsLane0_1->addChild(isSomeoneCloseBeforeYouTaskFrom0_1);
     switchConditionsLane0_1->addChild(isOtherLaneFeasibleTaskFrom0_1);
 //
-    ChangeSpeed *changeSpeedForPriority = new ChangeSpeed(15);
+    ChangeSpeed *changeSpeedForPriority = new ChangeSpeed(25);
 
 
     Sequence *generalDrivingSequence = new Sequence;
@@ -144,16 +144,20 @@ int main() {
     generalDrivingSequence->addChild(generalDriving);
     
     Sequence *drive_change_lane = new Sequence;
+    Selector * laneAndAproximate = new Selector;
+
     LanePrioritySelector *drivingSelector = new LanePrioritySelector;
+
     root->addChild(drive_change_lane);
-    
-    drivingSelector->addChild(laneSwitch0);
     drivingSelector->addChild(laneSwitch1);
     drivingSelector->addChild(laneSwitch2);
-    drivingSelector->addChild(changeSpeedForPriority);
+    drivingSelector->addChild(laneSwitch0);
+
+    laneAndAproximate->addChild(drivingSelector);
+    //laneAndAproximate->addChild(changeSpeedForPriority);
     
     drive_change_lane->addChild(generalDrivingSequence);
-    drive_change_lane->addChild(drivingSelector);
+    drive_change_lane->addChild(laneAndAproximate);
     
 
     h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
