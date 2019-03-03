@@ -141,8 +141,6 @@ public:
         
         std::sort(std::begin(children_ ), std::end(children_), compare);
         
-        
-        
         if(abs(children_[0]->id-children_[1]->id)>1 && CarStatus::lane!=1)
         {
             swap(children_[1], children_[2]);
@@ -216,7 +214,6 @@ public:
         int prev_size = previous_path_x.size();
         
         auto car_s = status.car_s;
-        
         
         int lane = CarStatus::lane;
         
@@ -322,7 +319,6 @@ public:
     }
 };
 
-
 class SwitchToOtherLaneIfFeasibleTask : public Node {
     /*Check if someone is close to you in your track*/
 private:
@@ -379,7 +375,6 @@ public:
         return true;
     }
 };
-
 
 class AproximateSpeedFrontCarTask : public Node {
     /*Check if someone is close to you in your track*/
@@ -469,7 +464,6 @@ public:
     }
 };
 
-
 class ColisionDetection : public Node {
     /*Check if someone is close to you in your track*/
     
@@ -517,3 +511,4 @@ public:
         return colision;
     }
 };
+
