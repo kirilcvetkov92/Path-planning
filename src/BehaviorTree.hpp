@@ -148,15 +148,13 @@ public:
         {
             swap(children_[1], children_[2]);
         }
+        
         for (int i=0; i<children_.size()-1; i++) {
             Node *child  = children_[i];
-            if(child->id==CarStatus::lane and i<2)
+            
+            if(child->id==CarStatus::lane)
             {
-                return true;;
-            }
-            else if (child->id==CarStatus::lane)
-            {
-                return false;
+                return true;
             }
             
             if (child->run(map, carStatus, ws))
