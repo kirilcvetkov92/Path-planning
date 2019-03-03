@@ -18,6 +18,7 @@
 #include "json.hpp"
 #include "math.h"
 
+
 using namespace std;
 
 struct Map{
@@ -59,15 +60,73 @@ public:
 
 class CompositeNode : public Node {
 private:
-    std::list<Node*> children;
+    std::vector<Node*> children;
 public:
-    const std::list<Node*>& getChildren() const {return children;}
-    void addChild (Node* child) {children.emplace_back(child);}
+    std::vector<Node*>& getChildren()  {return children;}
+    void addChild (Node* child) {children.push_back(child);}
 };
 
 class Selector : public CompositeNode {
 public:
     virtual bool run(Map &map, CarStatus &carStatus, uWS::WebSocket<uWS::SERVER> &ws) override {
+        for (Node* child : getChildren()) {
+            if (child->run(map, carStatus, ws))
+                return true;
+        }
+        return false;
+    }
+};
+
+
+class LanePrioritySelector : public CompositeNode {
+    
+public:
+    
+    int estimate( nlohmann::json  &sensorFusion, int laneNumber, int currentLaneNumber)
+    {
+        double avgSpeed = 0;
+        double count=0;
+
+        for(int i=0; i<sensorFusion.size(); i++)
+        {
+            float d = sensorFusion[i][6];
+
+            if(d>laneNumber*4 && d<4*(laneNumber+1))
+            {
+                count++;
+
+                double vx = sensorFusion[i][3];
+                double vy = sensorFusion[i][4];
+                avgSpeed += sqrt(vx*vx + vy*vy);
+            }
+        }
+        avgSpeed/=count;
+        double numerator = (avgSpeed/5.0)+1e-1;
+        double denominator = (count)+1e-8;
+        double scaler = abs(laneNumber - currentLaneNumber)%2+1;
+    
+        double cost  = 1 - exp(-(numerator/denominator) * scaler);
+        
+        return cost;
+    }
+    virtual bool run(Map &map, CarStatus &carStatus, uWS::WebSocket<uWS::SERVER> &ws) override {
+        
+        auto &sensorFusion = carStatus.sensor_fusion;
+        double currentLane = CarStatus::lane;
+        vector<Node*> &children = getChildren();
+  
+        for(int i=0; i<children.size()-1; i++)
+        {
+            for(int j=1; j<children.size(); j++)
+            {
+                double firstCost = estimate(sensorFusion, i, currentLane);
+                double secondCost = estimate(sensorFusion, j, currentLane);
+                if(firstCost>secondCost)
+                {
+                    std::swap(children[i], children[j]);
+                }
+            }
+        }
         for (Node* child : getChildren()) {
             if (child->run(map, carStatus, ws))
                 return true;
@@ -97,7 +156,7 @@ public:
         this->laneNumber = laneNumber;
     }
     virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
-        bool res = round(status.car_d) == laneNumber*4+2 and laneNumber==CarStatus::lane;
+        bool res = (round(status.car_d) == laneNumber*4+2 | round(status.car_d) == CarStatus::lane*4+2) and laneNumber==CarStatus::lane;
         if (res)
         {
             cout<<"Lane check passed => We are exactly on lane : "<<laneNumber<<endl;

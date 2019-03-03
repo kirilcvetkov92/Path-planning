@@ -77,7 +77,8 @@ int main() {
     avoidColisionDrive->addChild(colisionDetection);
     avoidColisionDrive->addChild(changeSpeedBeforeColision);
     avoidColisionDrive->addChild(driveToEscapeColision);
-
+    
+    
     Sequence * laneSwitch0 = new Sequence;  // In general there will be several nodes that are Sequence or Selector, so they should be suffixed by an integer to distinguish between them.
     IsLaneNumberTask * isLane0Task  = new IsLaneNumberTask(1);  // The door is initially closed and 5 meters away.
     Sequence *switchConditionsLane1 = new Sequence;  // Note that root can be either a Sequence or a Selector, since it has only one child.
@@ -132,6 +133,7 @@ int main() {
     switchConditionsLane0_1->addChild(isSomeoneCloseBeforeYouTaskFrom0_1);
     switchConditionsLane0_1->addChild(isOtherLaneFeasibleTaskFrom0_1);
 //
+    ChangeSpeed *changeSpeedForPriority = new ChangeSpeed(15);
 
 
     Sequence *generalDrivingSequence = new Sequence;
@@ -142,12 +144,14 @@ int main() {
     generalDrivingSequence->addChild(generalDriving);
     
     Sequence *drive_change_lane = new Sequence;
-    Selector *drivingSelector = new Selector;
+    LanePrioritySelector *drivingSelector = new LanePrioritySelector;
     root->addChild(drive_change_lane);
     
     drivingSelector->addChild(laneSwitch0);
     drivingSelector->addChild(laneSwitch1);
     drivingSelector->addChild(laneSwitch2);
+    drivingSelector->addChild(changeSpeedForPriority);
+    
     drive_change_lane->addChild(generalDrivingSequence);
     drive_change_lane->addChild(drivingSelector);
     
