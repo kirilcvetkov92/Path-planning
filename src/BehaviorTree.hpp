@@ -200,63 +200,6 @@ public:
     }
 };
 
-class IsSomeoneCloseBeforeYouTask : public Node {
-    /*Check if someone is close to you in your track*/
-    
-private:
-    int laneNumber;
-    
-public:
-    IsSomeoneCloseBeforeYouTask (int laneNumber): laneNumber(laneNumber){
-    }
-    virtual bool run(Map &map, CarStatus &status, uWS::WebSocket<uWS::SERVER> &ws) override {
-        //cout<<"IsSomeoneCloseBeforeYouTask";
-        auto &sensor_fusion = status.sensor_fusion;
-        bool found = false;
-        
-        double minDistance=INT_MAX;
-        double minSpeed=INT_MAX;
-        int previos_size = status.previous_path_x.size();
-        
-        double car_s = status.car_s;
-        
-        if(previos_size>0)
-        {
-            car_s = status.end_path_s;
-        }
-        
-        for(int i=0; i<sensor_fusion.size(); i++)
-        {
-            // get car lane
-            float d = sensor_fusion[i][6];
-            
-            if(d>laneNumber*4 && d<4*(laneNumber+1))
-            {
-                double vx = sensor_fusion[i][3];
-                double vy = sensor_fusion[i][4];
-                double speed = sqrt(vx*vx + vy*vy);
-                double s = sensor_fusion[i][5];
-                
-                double future_car_s = s + (previos_size*0.02)*speed;
-                
-                if(future_car_s>car_s && future_car_s-car_s<30)
-                {
-                    double d = future_car_s-car_s;
-                    if(minDistance>d)
-                    {
-                        minDistance=d;
-                        minSpeed = speed*2.24;
-                    }
-                    
-                    found = true;
-                }
-            }
-        }
-        
-        return found;
-    }
-};
-
 
 class DriveTask : public Node {
     /*Check we are in the middle of the lane*/

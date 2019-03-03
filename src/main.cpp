@@ -83,14 +83,12 @@ int main() {
     IsLaneNumberTask * isLane0Task  = new IsLaneNumberTask(1);  // The door is initially closed and 5 meters away.
     Sequence *switchConditionsLane1 = new Sequence;  // Note that root can be either a Sequence or a Selector, since it has only one child.
     IsOtherLaneFeasibleTask *isOtherLaneFeasibleTaskFrom0 = new IsOtherLaneFeasibleTask(0);
-    IsSomeoneCloseBeforeYouTask *isSomeoneCloseBeforeYouTask = new IsSomeoneCloseBeforeYouTask(1);
     //ChangeVelocityToTheClosestInLane *changeVelocityToTheClosestInLane  = new ChangeVelocityToTheClosestInLane(1);
 
     Sequence * laneSwitch2 = new Sequence;  // In general there will be several nodes that are Sequence or Selector, so they should be suffixed by an integer to distinguish between them.
     IsLaneNumberTask * isLane2Task  = new IsLaneNumberTask(1);  // The door is initially closed and 5 meters away.
     Sequence *switchConditionsLane1_2 = new Sequence;  // Note that root can be either a Sequence or a Selector, since it has only one child.
     IsOtherLaneFeasibleTask *isOtherLaneFeasibleTaskFrom1_2 = new IsOtherLaneFeasibleTask(2);
-    IsSomeoneCloseBeforeYouTask *isSomeoneCloseBeforeYouTask1_2 = new IsSomeoneCloseBeforeYouTask(1);
     //ChangeVelocityToTheClosestInLane *changeVelocityToTheClosestInLane  = new ChangeVelocityToTheClosestInLane(1);
     
     
@@ -100,13 +98,11 @@ int main() {
     IsLaneNumberTask * isLaneTask2_1  = new IsLaneNumberTask(2);  // The door is initially closed and 5 meters away.
     Sequence *switchConditionsLane2_1 = new Sequence;  // Note that root can be either a Sequence or a Selector, since it has only one child.
     IsOtherLaneFeasibleTask *isOtherLaneFeasibleTaskFrom2_1 = new IsOtherLaneFeasibleTask(1);
-    IsSomeoneCloseBeforeYouTask *isSomeoneCloseBeforeYouTaskFrom2_1 = new IsSomeoneCloseBeforeYouTask(2);
     
     Sequence * laneSwitch0_1 = new Sequence;
     IsLaneNumberTask * isLaneTask0_1  = new IsLaneNumberTask(0);  // The door is initially closed and 5 meters away.
     Sequence *switchConditionsLane0_1 = new Sequence;  // Note that root can be either a Sequence or a Selector, since it has only one child.
     IsOtherLaneFeasibleTask *isOtherLaneFeasibleTaskFrom0_1 = new IsOtherLaneFeasibleTask(1);
-    IsSomeoneCloseBeforeYouTask *isSomeoneCloseBeforeYouTaskFrom0_1 = new IsSomeoneCloseBeforeYouTask(0);
     
     
     laneSwitch0->addChild (isLane0Task);
@@ -143,7 +139,6 @@ int main() {
     generalDrivingSequence->addChild(generalDriving);
     
     Sequence *drive_change_lane = new Sequence;
-    Selector * laneAndAproximate = new Selector;
 
     LanePrioritySelector *drivingSelector = new LanePrioritySelector;
 
