@@ -133,7 +133,6 @@ int main() {
     //switchConditionsLane0_1->addChild(isSomeoneCloseBeforeYouTaskFrom0_1);
     switchConditionsLane0_1->addChild(isOtherLaneFeasibleTaskFrom0_1);
 //
-    ChangeSpeed *changeSpeedForPriority = new ChangeSpeed(25);
 
 
     Sequence *generalDrivingSequence = new Sequence;
@@ -152,12 +151,9 @@ int main() {
     drivingSelector->addChild(laneSwitch1);
     drivingSelector->addChild(laneSwitch2);
     drivingSelector->addChild(laneSwitch0);
-
-    laneAndAproximate->addChild(drivingSelector);
-    //laneAndAproximate->addChild(changeSpeedForPriority);
     
     drive_change_lane->addChild(generalDrivingSequence);
-    drive_change_lane->addChild(laneAndAproximate);
+    drive_change_lane->addChild(drivingSelector);
     
 
     h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
