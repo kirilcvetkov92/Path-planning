@@ -21,13 +21,15 @@ Path planning and decision making for autonomous vehicles in urban environments 
 * A trajectory is a sequence of states visited by the vehicle, parameterized by time and, most probably, velocity.
 * Trajectory planning or trajectory generation is the real-time planning of a vehicle’s move from one feasible state to the next, satisfying the car’s kinematic limits based on its dynamics and as constrained by the navigation mode.
 
+<p align="center">
+   This is the general view of self driving autonomous system integration : 
+   <img src="documentation/self_driving_cars.png" width="50%" height="50%">
+</p>
 
-This is the general view of self driving autonomous system integration : 
-![Picture](documentation/self_driving_cars.png?style=centerme)
-
-
-The blocks inside the container are the parts of the path planning procedure;
-![Picture](documentation/self_driving_cars2.png?style=centerme)
+<p align="center">
+   The blocks inside the container are the parts of the path planning procedure;
+   <img src="documentation/self_driving_cars2.png" width="50%" height="50%">
+</p>
 
 ### Trajectory generation :
 
