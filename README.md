@@ -23,16 +23,12 @@ Path planning and decision making for autonomous vehicles in urban environments 
 
 
 This is the general view of self driving autonomous system integration : 
-<p align="center">
-<div style="text-align:center">
-<img src = "documentation/self_driving_cars.png"> 
-</div>
-</p>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![Picture](documentation/self_driving_cars.png?style=centerme)
+
 
 The blocks inside container are the parts of path planing procedure;
-<div style="text-align:center">
-<img src = "documentation/self_driving_cars2.png" >
-</div>
+![Picture](documentation/self_driving_cars2.png?style=centerme)
+
 ### Trajectory generation :
 For each efficient target, we compute the corresponding trajectory.
 We send commands to the controller as a set of waypoints, i.e., discrete points (supposedly closed to one another) spread across the trajectory, often at a fixed interval equal to the controller's sampling time. The controller then has to regenerate trajectory segments between two consecutive waypoints, such that manipulator reaches the next waypoint within the fixed time interval while staying within joint limits, velocity limits, and acceleration limits. However, the controller does not really consider even collision avoidance or anything else
