@@ -23,21 +23,30 @@ Path planning and decision making for autonomous vehicles in urban environments 
 
 
 This is the general view of self driving autonomous system integration : 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![Picture](documentation/self_driving_cars.png?style=centerme)
+![Picture](documentation/self_driving_cars.png?style=centerme)
 
 
 The blocks inside container are the parts of path planing procedure;
 ![Picture](documentation/self_driving_cars2.png?style=centerme)
 
 ### Trajectory generation :
+
+
 For each efficient target, we compute the corresponding trajectory.
-We send commands to the controller as a set of waypoints, i.e., discrete points (supposedly closed to one another) spread across the trajectory, often at a fixed interval equal to the controller's sampling time. The controller then has to regenerate trajectory segments between two consecutive waypoints, such that manipulator reaches the next waypoint within the fixed time interval while staying within joint limits, velocity limits, and acceleration limits. However, the controller does not really consider even collision avoidance or anything else
+We send commands to the controller as a set of waypoints, i.e., discrete points (supposedly closed to one another) spread across the trajectory, often at a fixed interval equal to the controller's sampling time. 
+
+<img src="documentation/trajectoryGeneration.png" width="50%" height="50%">
+
+The controller then has to regenerate trajectory segments between two consecutive waypoints, such that manipulator reaches the next waypoint within the fixed time interval while staying within joint limits, velocity limits, and acceleration limits. However, the controller does not really consider even collision avoidance or anything else
 
 ### Prediction:
+<img src="documentation/prediction.png" width="50%" height="50%">
+
 We predict situations in over environment in order to able decision that will got you to the destination safely and efficiently
 For this project I've build colision detection, that predicts possible colision with two cars.
 
 ### Behavior:
+<img src="documentation/behavior.png" width="50%" height="50%">
 
 Behavior plalner takes input :
 * map of the world, 
@@ -51,7 +60,7 @@ Output : Suggested manevaur for the vehicle which the trajectory planner is resp
 
 A Behavior Tree (BT) is a mathematical model of plan execution used in computer science, robotics, control systems and video games. They describe switchings between a finite set of tasks in a modular fashion. Their strength comes from their ability to create very complex tasks composed of simple tasks, without worrying how the simple tasks are implemented. BTs present some similarities to hierarchical state machines with the key difference that the main building block of a behavior is a task rather than a state. Its ease of human understanding make BTs less error prone and very popular in the game developer community. BTs have been shown to generalize several other control architectures.
 
-## Composite
+## Composite Node
 
 A composite node is a node that can have one or more children. They will process one or more of these children in either a first to last sequence or random order depending on the particular composite node in question, and at some stage will consider their processing complete and pass either success or failure to their parent, often determined by the success or failure of the child nodes. During the time they are processing children, they will continue to return Running to the parent.
 
@@ -59,10 +68,43 @@ A composite node is a node that can have one or more children. They will process
 
 The simplest composite node found within behaviour trees, their name says it all. A sequence will visit each child in order, starting with the first, and when that succeeds will call the second, and so on down the list of children. If any child fails it will immediately return failure to the parent. If the last child in the sequence succeeds, then the sequence will return success to its parent.
 
-It's important to make clear that the node types in behaviour trees have quite a wide range of applications. The most obvious usage of sequences is to define a sequence of tasks that must be completed in entirety, and where failure of one means further processing of that sequence of tasks becomes redundant. For example:
+It's important to make clear that the node types in behaviour trees have quite a wide range of applications. The most obvious usage of sequences is to define a sequence of tasks that must be completed in entirety, and where failure of one means further processing of that sequence of tasks becomes redundant. 
+
+In the example below is an example of Selector hierarchy, as a part of my behavioral tree used for the path planning project :  
+<img src="/documentation/sequence.png">
+
+Execution : The main goal of this selector is to choose left child (detecting whether we have car very close before us, and adapt the speed accordingly) or right child (drive normaly)
+
+This selector will return true if and only if all children return true according to the ordered steps of execution :
+1. The car is in second lane (IsCurentLane condition returns true/false)
+   1. (If this block return false, then we don't continue examining the rest of the blocks in this sequence)
+1. It is safe to switch lane (SafeToSwitchLane condition returns true)
+   1. (if this block return false, then we don't continue examining the rest of the blocks in this sequence)
+1. Succesfully perform the switch task (SwitchLane task is sucessfully executed, returns true)
+1. -----> Goal achieved
+
 ## Selector
 
 Where a sequence is an AND, requiring all children to succeed to return a success, a selector will return a success if any of its children succeed and not process any further children. It will process the first child, and if it fails will process the second, and if that fails will process the third, until a success is reached, at which point it will instantly return success. It will fail if all children fail. This means a selector is analagous with an OR gate, and as a conditional statement can be used to check multiple conditions to see if any one of them is true.
+
+In the example below is an example of Sequence hierarchy, as a part of my behavioral tree used for the path planning project :  
+<img src="documentation/selector.png" width="50%" height="50%">
+
+
+Execution : The main goal of this selector is to choose left child (detecting whether we have car very close before us, and adapt the speed accordingly) or right child (drive normaly)
+
+This selector will return true only if one of it's children returns true, execution is according to the following steps :
+
+1. Left Child (Sequence) : Returns true if there is car close before us and we are able to adapt our speed
+   1. Is care close before
+      1. (If this block return false, then we don't continue examining the rest of the blocks in this sequence)
+   1. Aproximate speed
+      1. (If this block return false, then we don't continue examining the rest of the blocks in this sequence)
+   1. Drive
+   1. (If Left Child return true, then we don't continue examining the rest of the blocks in this selector)
+
+1. Right Child (Task)
+   1. Drive normaly
 
 ## Priority Selector
 If priority selector is used, child behaviors are ordered in a list and tried one after another.
