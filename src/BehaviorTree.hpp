@@ -147,7 +147,7 @@ public:
             swap(children_[1], children_[2]);
         }
         
-        cout<<"PRIORITET: "<<children_[0]->id<<" "<<children_[1]->id<<" "<<children_[2]->id<<endl;
+        cout<<"Priority: "<<children_[0]->id<<" "<<children_[1]->id<<" "<<children_[2]->id<<endl;
         
         for (int i=0; i<children_.size()-1; i++) {
             Node *child  = children_[i];
