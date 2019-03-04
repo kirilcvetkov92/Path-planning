@@ -36,6 +36,8 @@ It's important to make clear that the node types in behaviour trees have quite a
 
 Where a sequence is an AND, requiring all children to succeed to return a success, a selector will return a success if any of its children succeed and not process any further children. It will process the first child, and if it fails will process the second, and if that fails will process the third, until a success is reached, at which point it will instantly return success. It will fail if all children fail. This means a selector is analagous with an OR gate, and as a conditional statement can be used to check multiple conditions to see if any one of them is true.
 
+## Priority Selector
+
 ## Leaf
 
 These are the lowest level node type, and are incapable of having any children.
