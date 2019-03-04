@@ -100,7 +100,7 @@ A leaf node can be a **condition** or an **Task(Action)**.
 ### Condition
 A condition can return true for success and false otherwise. 
 ### Task 
-The task can return true on success, false, otherwise.
+The task can return true if it is completed, false, otherwise.
 
 
 ## Sequences
