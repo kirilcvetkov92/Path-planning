@@ -42,12 +42,13 @@ We send commands to the controller as a set of waypoints, i.e., discrete points 
 </p>
 
 For my project the trajectory is generated using cubic spline with four points :
-*(Note : This explanation is in Frenet coordinates, we use the variables s and d to describe a vehicle’s position on the road. The s coordinate represents distance along the road (also known as longitudinal displacement) and the d coordinate represents side-to-side position on the road (also known as lateral displacement).*
+*(Note : This explanation is in Frenet coordinates, we use the variables s and d to describe a vehicle’s position on the road. The s coordinate represents distance along the road (also known as longitudinal displacement) and the d coordinate represents side-to-side position on the road (also known as lateral displacement).  
+And r is the width of the road (in meters).*
 
 * Current position (s, d) 
-* Desired lane (s+30, d*lane+2) 
-* Desired lane (s+60, d*lane+2)
-* Desired lane (s+90, d*lane+2)
+* Desired lane (s+30, r*lane+(r/2)) 
+* Desired lane (s+60, r*lane+(r/2))
+* Desired lane (s+90, r*lane++(r/2))
 
 The controller then has to regenerate trajectory segments between two consecutive waypoints, such that manipulator reaches the next waypoint within the fixed time interval while staying within joint limits, velocity limits, and acceleration limits. However, the controller does not really consider even collision avoidance or anything else
 
@@ -126,7 +127,7 @@ In the example below is an example of Selector hierarchy, as a part of my behavi
 Execution: The main goal of this selector is to choose left child (detecting whether we have a car very close before us, and adapt the speed accordingly) or right child (drive normally)
 
 This selector will return true if and only if all children return true according to the ordered steps of execution :
-1. The car is in second lane (IsCurentLane condition returns true/false)
+1. The car is in second lane (IsCurrentLane condition returns true/false)
    1. (If this block return false, then we don't continue examining the rest of the blocks in this sequence)
 1. It is safe to switch lane (SafeToSwitchLane condition returns true)
    1. (if this block return false, then we don't continue examining the rest of the blocks in this sequence)
