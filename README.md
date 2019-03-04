@@ -42,8 +42,8 @@ We send commands to the controller as a set of waypoints, i.e., discrete points 
 </p>
 
 For my project the trajectory is generated using cubic spline with four points :
-*(Note : This explanation is in Frenet coordinates, we use the variables s and d to describe a vehicle’s position on the road. The s coordinate represents distance along the road (also known as longitudinal displacement) and the d coordinate represents side-to-side position on the road (also known as lateral displacement).  
-And r is the width of the road (in meters).*
+*(Note : This explanation is in Frenet coordinates, we use the variables s and d to describe a vehicle’s position on the road. The s coordinate represents distance along the road (also known as longitudinal displacement) and the d coordinate represents side-to-side position on the road (also known as lateral displacement).And **r** value is the width of the road (in meters)*
+.  
 
 * Current position (s, d) 
 * Desired lane (s+30, r*lane+(r/2)) 
