@@ -36,9 +36,19 @@ Path planning and decision making for autonomous vehicles in urban environments 
 
 For each efficient target, we compute the corresponding trajectory.
 We send commands to the controller as a set of waypoints, i.e., discrete points (supposedly closed to one another) spread across the trajectory, often at a fixed interval equal to the controller's sampling time. 
+
 <p align="center">
    <img src="documentation/trajectoryGeneration.png" width="50%" height="50%">
 </p>
+
+For my project the trajectory is generated using cubic spline with four points :
+*(Note : This explanation is in Frenet coordinates, we use the variables s and d to describe a vehicle’s position on the road. The s coordinate represents distance along the road (also known as longitudinal displacement) and the d coordinate represents side-to-side position on the road (also known as lateral displacement).*
+
+* Current position (s, d) 
+* Desired lane (s+30, d*lane+2) 
+* Desired lane (s+60, d*lane+2)
+* Desired lane (s+90, d*lane+2)
+
 The controller then has to regenerate trajectory segments between two consecutive waypoints, such that manipulator reaches the next waypoint within the fixed time interval while staying within joint limits, velocity limits, and acceleration limits. However, the controller does not really consider even collision avoidance or anything else
 
 ### Prediction:
