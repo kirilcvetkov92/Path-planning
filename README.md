@@ -18,7 +18,26 @@ Path planning and decision making for autonomous vehicles in urban environments 
 * A trajectory is a sequence of states visited by the vehicle, parameterized by time and, most probably, velocity.
 * Trajectory planning or trajectory generation is the real-time planning of a vehicle’s move from one feasible state to the next, satisfying the car’s kinematic limits based on its dynamics and as constrained by the navigation mode.
 
- 
+## Path planning in self driving cars
+
+### Trajectory generation :
+For each efficient target, we compute the corresponding trajectory.
+We send commands to the controller as a set of waypoints, i.e., discrete points (supposedly closed to one another) spread across the trajectory, often at a fixed interval equal to the controller's sampling time. The controller then has to regenerate trajectory segments between two consecutive waypoints, such that manipulator reaches the next waypoint within the fixed time interval while staying within joint limits, velocity limits, and acceleration limits. However, the controller does not really consider even collision avoidance or anything else
+
+### Prediction:
+We predict situations in over environment in order to able decision that will got you to the destination safely and efficiently
+For this project I've build colision detection, that predicts possible colision with two cars.
+
+### Behavior:
+
+Behavior plalner takes input :
+* map of the world, 
+* route to the destination
+* prediction about what static and dynamic obstacles are likely to do
+
+Output : Suggested manevaur for the vehicle which the trajectory planner is responsible for reaching collision free, smooth and safe
+
+
 # Behavior Tree
 
 A Behavior Tree (BT) is a mathematical model of plan execution used in computer science, robotics, control systems and video games. They describe switchings between a finite set of tasks in a modular fashion. Their strength comes from their ability to create very complex tasks composed of simple tasks, without worrying how the simple tasks are implemented. BTs present some similarities to hierarchical state machines with the key difference that the main building block of a behavior is a task rather than a state. Its ease of human understanding make BTs less error prone and very popular in the game developer community. BTs have been shown to generalize several other control architectures.
@@ -37,17 +56,39 @@ It's important to make clear that the node types in behaviour trees have quite a
 Where a sequence is an AND, requiring all children to succeed to return a success, a selector will return a success if any of its children succeed and not process any further children. It will process the first child, and if it fails will process the second, and if that fails will process the third, until a success is reached, at which point it will instantly return success. It will fail if all children fail. This means a selector is analagous with an OR gate, and as a conditional statement can be used to check multiple conditions to see if any one of them is true.
 
 ## Priority Selector
+If priority selector is used, child behaviors are ordered in a list and tried one after another.
+For this project I prioritize the ordering of lange changing child nodes based on following formula : 
 
 ## Leaf
 
 These are the lowest level node type, and are incapable of having any children.
 
 Leafs are however the most powerful of node types, as these will be defined and implemented for your intelligent system to do the actions and behaviors specific or character specific tests or actions required to make your tree actually do useful stuff.
-
-
-### Pros of using Behavior trees
+A leaf node can be a **condition** or an **Task(Action)**.
+### Condition
+A condition can
+return success if is true or failure if is false. 
+### Task 
+The
+Task can return success if succeed, failure if fails,
 
 ### Cons of using Behavior trees
+
+* Clunky for state-based behavior
+* Changing behavior based on external changes
+* Isn’t really thinking ahead about unique situations
+*  Only as good as the designer makes it (just follows the recipes)
+
+### Pros of using Behavior trees
+* Transform hardly-visible state machine into hierarchical system
+* Encapsulate and spearate conditional tasks into classes
+* Easy automation tests for each task.
+* Better when pass/fail of tasks is central
+* Reausability
+* Appearance of goal-driven behavior
+* Multi-step behavior
+* Fast
+* Recover from errors
 
 # Behavior Tree Architecture for Path Planing
 
