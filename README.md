@@ -34,19 +34,22 @@ The blocks inside container are the parts of path planing procedure;
 
 For each efficient target, we compute the corresponding trajectory.
 We send commands to the controller as a set of waypoints, i.e., discrete points (supposedly closed to one another) spread across the trajectory, often at a fixed interval equal to the controller's sampling time. 
-
-<img src="documentation/trajectoryGeneration.png" width="50%" height="50%">
-
+<p align="center">
+   <img src="documentation/trajectoryGeneration.png" width="50%" height="50%">
+</p>
 The controller then has to regenerate trajectory segments between two consecutive waypoints, such that manipulator reaches the next waypoint within the fixed time interval while staying within joint limits, velocity limits, and acceleration limits. However, the controller does not really consider even collision avoidance or anything else
 
 ### Prediction:
-<img src="documentation/prediction.png" width="50%" height="50%">
-
+<p align="center">
+   <img src="documentation/prediction.png" width="50%" height="50%">
+</p>
 We predict situations in over environment in order to able decision that will got you to the destination safely and efficiently
 For this project I've build colision detection, that predicts possible colision with two cars.
 
 ### Behavior:
+<p align="center">
 <img src="documentation/behavior.png" width="50%" height="50%">
+</p>
 
 Behavior plalner takes input :
 * map of the world, 
@@ -107,8 +110,9 @@ The simplest composite node found within behaviour trees, their name says it all
 It's important to make clear that the node types in behaviour trees have quite a wide range of applications. The most obvious usage of sequences is to define a sequence of tasks that must be completed in entirety, and where failure of one means further processing of that sequence of tasks becomes redundant. 
 
 In the example below is an example of Selector hierarchy, as a part of my behavioral tree used for the path planning project :  
+<p align="center">
 <img src="/documentation/sequence.png">
-
+</p>
 Execution : The main goal of this selector is to choose left child (detecting whether we have car very close before us, and adapt the speed accordingly) or right child (drive normaly)
 
 This selector will return true if and only if all children return true according to the ordered steps of execution :
@@ -124,8 +128,9 @@ This selector will return true if and only if all children return true according
 Where a sequence is an AND, requiring all children to succeed to return a success, a selector will return a success if any of its children succeed and not process any further children. It will process the first child, and if it fails will process the second, and if that fails will process the third, until a success is reached, at which point it will instantly return success. It will fail if all children fail. This means a selector is analagous with an OR gate, and as a conditional statement can be used to check multiple conditions to see if any one of them is true.
 
 In the example below is an example of Sequence hierarchy, as a part of my behavioral tree used for the path planning project :  
+<p align="center">
 <img src="documentation/selector.png" width="50%" height="50%">
-
+</p>
 
 Execution : The main goal of this selector is to choose left child (detecting whether we have car very close before us, and adapt the speed accordingly) or right child (drive normaly)
 
@@ -149,21 +154,22 @@ If priority selector is used, child behaviors are ordered in a list and tried on
 
 For this project, I used priority selector to select and prioritize which of the lanes we should drive/switch.
 Below there is a picture describing this behavior :
-
+<p align="center">
 <img src="documentation/prioritySelector.png">
-
+</p>
 ### Prioritization equiation and estimation
 For this project I prioritize which of the lanes we should drive/switch based on following formula : 
+<p align="center">
 <img src="documentation/formula.png">
-
+</p>
 The Bigger the reward is and smaller the penalty, priority for visiting the lane increases.
 
 
 # Behavior Tree Architecture for Path Planing
 Bellow is the complete Path planning behavior tree architecture : 
-
+<p align="center">
 <img src="documentation/BehaviorTree.png">
-
+</p>
 
 # Installation 
 
