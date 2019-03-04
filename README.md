@@ -60,9 +60,45 @@ Output : Suggested manevaur for the vehicle which the trajectory planner is resp
 
 A Behavior Tree (BT) is a mathematical model of plan execution used in computer science, robotics, control systems and video games. They describe switchings between a finite set of tasks in a modular fashion. Their strength comes from their ability to create very complex tasks composed of simple tasks, without worrying how the simple tasks are implemented. BTs present some similarities to hierarchical state machines with the key difference that the main building block of a behavior is a task rather than a state. Its ease of human understanding make BTs less error prone and very popular in the game developer community. BTs have been shown to generalize several other control architectures.
 
+
+## Pros of using Behavior trees
+* Useful when we have so much transitions and states
+* Transform hardly-visible state machine into hierarchical system
+* Encapsulate and spearate conditional tasks into classes
+* Easy automation tests for each task.
+* Better when pass/fail of tasks is central
+* Reausability
+* Appearance of goal-driven behavior
+* Multi-step behavior
+* Fast
+* Recover from errors
+
+## Cons of using Behavior trees
+
+* Clunky for state-based behavior
+* Changing behavior based on external changes
+* Isn’t really thinking ahead about unique situations
+*  Only as good as the designer makes it (just follows the recipes)
+
+
 ## Composite Node
 
 A composite node is a node that can have one or more children. They will process one or more of these children in either a first to last sequence or random order depending on the particular composite node in question, and at some stage will consider their processing complete and pass either success or failure to their parent, often determined by the success or failure of the child nodes. During the time they are processing children, they will continue to return Running to the parent.
+
+
+## Leaf
+
+These are the lowest level node type, and are incapable of having any children.
+
+Leafs are however the most powerful of node types, as these will be defined and implemented for your intelligent system to do the actions and behaviors specific or character specific tests or actions required to make your tree actually do useful stuff.
+A leaf node can be a **condition** or an **Task(Action)**.
+### Condition
+A condition can
+return success if is true or failure if is false. 
+### Task 
+The
+Task can return success if succeed, failure if fails,
+
 
 ## Sequences
 
@@ -107,41 +143,27 @@ This selector will return true only if one of it's children returns true, execut
    1. Drive normaly
 
 ## Priority Selector
+Very simple, It's the same as selector but this time they are ordered somehow.
 If priority selector is used, child behaviors are ordered in a list and tried one after another.
-For this project I prioritize the ordering of lange changing child nodes based on following formula : 
 
-## Leaf
 
-These are the lowest level node type, and are incapable of having any children.
+For this project, I used priority selector to select and prioritize which of the lanes we should drive/switch.
+Below there is a picture describing this behavior :
 
-Leafs are however the most powerful of node types, as these will be defined and implemented for your intelligent system to do the actions and behaviors specific or character specific tests or actions required to make your tree actually do useful stuff.
-A leaf node can be a **condition** or an **Task(Action)**.
-### Condition
-A condition can
-return success if is true or failure if is false. 
-### Task 
-The
-Task can return success if succeed, failure if fails,
+<img src="documentation/prioritySelector.png">
 
-### Cons of using Behavior trees
+### Prioritization equiation and estimation
+For this project I prioritize which of the lanes we should drive/switch based on following formula : 
+<img src="documentation/formula.png">
 
-* Clunky for state-based behavior
-* Changing behavior based on external changes
-* Isn’t really thinking ahead about unique situations
-*  Only as good as the designer makes it (just follows the recipes)
+The Bigger the reward is and smaller the penalty, priority for visiting the lane increases.
 
-### Pros of using Behavior trees
-* Transform hardly-visible state machine into hierarchical system
-* Encapsulate and spearate conditional tasks into classes
-* Easy automation tests for each task.
-* Better when pass/fail of tasks is central
-* Reausability
-* Appearance of goal-driven behavior
-* Multi-step behavior
-* Fast
-* Recover from errors
 
 # Behavior Tree Architecture for Path Planing
+Bellow is the complete Path planning behavior tree architecture : 
+
+<img src="documentation/BehaviorTree.png">
+
 
 # Installation 
 
