@@ -70,7 +70,7 @@ Behavior planner takes input :
 * prediction about what static and dynamic obstacles are likely to do
 
 Output: Suggested maneuver for the vehicle which the trajectory planner is responsible for reaching collision-free, smooth and safe
-
+trajectory.
 
 # Behavior Tree
 
@@ -168,6 +168,7 @@ Below there is a picture describing this behavior :
 <p align="center">
 <img src="documentation/prioritySelector.png">
 </p>
+
 ### Prioritization equiation and estimation
 For this project I prioritize which of the lanes we should drive/switch based on following formula : 
 <p align="center">
