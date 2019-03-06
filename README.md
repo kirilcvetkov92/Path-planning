@@ -148,7 +148,7 @@ Execution: The main goal of this selector is to choose left child (detecting whe
 This selector will return true only if one of its children returns true, execution is according to the following steps :
 
 1. Left Child (Sequence): Returns true if there is car close before us and we are able to adapt our speed
-   1. Is care close before
+   1. Is there a car close in front of us
       1. (If this block return false, then we don't continue examining the rest of the blocks in this sequence)
    1. Approximate speed
       1. (If this block return false, then we don't continue examining the rest of the blocks in this sequence)
